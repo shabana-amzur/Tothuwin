@@ -61,7 +61,9 @@ class ChatService:
     async def get_chat_response(
         self,
         user_message: str,
-        conversation_history: List[Dict[str, str]] = None
+        conversation_history: List[Dict[str, str]] = None,
+        user_id: int = None,
+        use_rag: bool = False
     ) -> Dict[str, str]:
         """
         Get response from Gemini for the user's message
@@ -69,6 +71,8 @@ class ChatService:
         Args:
             user_message: The user's input message
             conversation_history: Optional list of previous messages
+            user_id: User ID for RAG
+            use_rag: Whether to use RAG with user's documents
         
         Returns:
             Dictionary with response message and metadata
@@ -77,12 +81,29 @@ class ChatService:
             # Build message list
             messages = []
             
+            # Check if should use RAG
+            rag_context = ""
+            if use_rag and user_id:
+                from app.services.rag_service import get_rag_service
+                rag_service = get_rag_service()
+                
+                # Retrieve relevant chunks
+                chunks = rag_service.retrieve_relevant_chunks(user_id, user_message)
+                if chunks:
+                    rag_context = rag_service.format_context_for_prompt(chunks)
+                    logger.info(f"Using RAG with {len(chunks)} chunks for user {user_id}")
+            
             # Add system message for context
             system_prompt = (
                 "You are a helpful, friendly, and knowledgeable AI assistant. "
                 "Provide clear, accurate, and concise responses. "
                 "Format your responses using markdown when appropriate."
             )
+            
+            # If RAG context is available, add it to system prompt
+            if rag_context:
+                system_prompt += "\n\n" + rag_context + "\nPlease answer the user's question based on the above context."
+            
             messages.append(SystemMessage(content=system_prompt))
             
             # Add conversation history if provided

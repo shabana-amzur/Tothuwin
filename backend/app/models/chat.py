@@ -21,6 +21,14 @@ class ChatRequest(BaseModel):
         default=[],
         description="Previous messages for context"
     )
+    session_id: Optional[str] = Field(
+        default=None,
+        description="Optional session ID to group related chats"
+    )
+    thread_id: Optional[int] = Field(
+        default=None,
+        description="Optional thread ID to associate message with a thread"
+    )
     
     class Config:
         json_schema_extra = {

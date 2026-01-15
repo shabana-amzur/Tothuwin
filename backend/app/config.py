@@ -28,14 +28,33 @@ class Settings(BaseSettings):
     FASTAPI_PORT: int = 8000
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
     
-    # Database (for future projects)
-    DATABASE_URL: str = ""
+    # Database Configuration
+    DATABASE_URL: str
     NEXT_PUBLIC_SUPABASE_URL: str = ""
     NEXT_PUBLIC_SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
     
+    # JWT Authentication
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
+    ACCESS_TOKEN_EXPIRE_DAYS: int = 7  # For OAuth tokens
+    
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    BACKEND_URL: str = "http://localhost:8001"
+    FRONTEND_URL: str = "http://localhost:3000"
+    
     class Config:
-        env_file = ".env"
+        import os
+        from pathlib import Path
+        
+        # Look for .env in parent directory (project root)
+        backend_dir = Path(__file__).resolve().parent.parent
+        project_root = backend_dir.parent
+        env_file = str(project_root / ".env")
+        
         case_sensitive = True
         extra = "ignore"  # Ignore extra fields in .env
 

@@ -5,11 +5,14 @@ AI Chat Backend - Project 1: Basic Chatbot
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 import logging
 from contextlib import asynccontextmanager
 
 from app.config import get_settings
-from app.api import chat
+from app.api import chat, auth, documents
+from app.api import threads, oauth
+from app.database import engine, Base
 
 # Configure logging
 logging.basicConfig(
@@ -28,6 +31,15 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Starting AI Chat Application...")
     logger.info(f"📦 Model: {settings.GEMINI_MODEL}")
     logger.info(f"🌡️  Temperature: {settings.GEMINI_TEMPERATURE}")
+    
+    # Create database tables
+    try:
+        logger.info("🗄️  Creating database tables...")
+        Base.metadata.create_all(bind=engine)
+        logger.info("✅ Database tables created successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to create database tables: {str(e)}")
+    
     yield
     # Shutdown
     logger.info("👋 Shutting down AI Chat Application...")
@@ -51,8 +63,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add Session Middleware for OAuth
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SECRET_KEY,
+    max_age=3600,  # 1 hour session timeout
+    same_site="lax",  # Required for OAuth redirects
+    https_only=False  # Set to True in production with HTTPS
+)
+
 # Include routers
+app.include_router(auth.router)
+app.include_router(oauth.router)
 app.include_router(chat.router)
+app.include_router(documents.router)
+app.include_router(threads.router)
 
 
 @app.get("/")
