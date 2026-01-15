@@ -222,7 +222,7 @@ All configured in `.env`:
 
 ```env
 # Google Gemini API
-GOOGLE_GEMINI_API_KEY=AIzaSyDwK-M85lwn_FfbqOiBhQ5OlnnpDVdjTO8
+GOOGLE_GEMINI_API_KEY=google api key
 GEMINI_MODEL=gemini-1.5-pro
 
 # Server Configuration
