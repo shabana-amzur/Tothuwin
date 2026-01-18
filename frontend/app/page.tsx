@@ -10,6 +10,8 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp?: string;
+  image_url?: string;
+  is_image?: boolean;
 }
 
 interface ThreadSidebarProps {
@@ -228,6 +230,8 @@ export default function Home() {
         role: 'assistant',
         content: data.message,
         timestamp: data.timestamp,
+        image_url: data.image_url,
+        is_image: data.is_image,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -326,7 +330,19 @@ export default function Home() {
                     <div className="flex items-start space-x-2">
                       <div className="flex-1 min-w-0 overflow-hidden">
                         {message.role === 'assistant' ? (
-                          <MarkdownRenderer content={message.content} />
+                          <>
+                            <MarkdownRenderer content={message.content} />
+                            {message.is_image && message.image_url && (
+                              <div className="mt-3">
+                                <img 
+                                  src={`http://localhost:8001${message.image_url}`}
+                                  alt="Generated image"
+                                  className="rounded-lg max-w-full h-auto shadow-lg"
+                                  style={{ maxHeight: '512px' }}
+                                />
+                              </div>
+                            )}
+                          </>
                         ) : (
                           <p className="whitespace-pre-wrap break-words">
                             {message.content}

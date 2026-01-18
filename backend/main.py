@@ -5,9 +5,11 @@ AI Chat Backend - Project 1: Basic Chatbot
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from app.config import get_settings
 from app.api import chat, auth, documents
@@ -78,6 +80,11 @@ app.include_router(oauth.router)
 app.include_router(chat.router)
 app.include_router(documents.router)
 app.include_router(threads.router)
+
+# Mount static files for serving uploaded documents and generated images
+uploads_path = Path("uploads")
+uploads_path.mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_path)), name="uploads")
 
 
 @app.get("/")

@@ -56,6 +56,8 @@ class ChatResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.now)
     model: str = Field(default="gemini-1.5-pro")
     thread_id: Optional[int] = Field(default=None, description="Thread ID")
+    image_url: Optional[str] = Field(default=None, description="Generated image URL if applicable")
+    is_image: Optional[bool] = Field(default=False, description="Whether this response includes an image")
     
     class Config:
         json_schema_extra = {

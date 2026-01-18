@@ -116,7 +116,7 @@ async def chat(
                 thread_id=thread_id,
                 message=request.message,
                 response=result["message"],
-                model=result["model"],
+                model=result.get("model", "gemini-2.5-flash"),
                 session_id=request.session_id
             )
             db.add(chat_record)
@@ -137,12 +137,19 @@ async def chat(
         except Exception as title_error:
             logger.error(f"Failed to generate thread title: {str(title_error)}")
         
-        # Return response
-        return ChatResponse(
-            message=result["message"],
-            model=result["model"],
-            thread_id=thread_id
-        )
+        # Return response with optional image data
+        response_data = {
+            "message": result["message"],
+            "model": result.get("model", "gemini-2.5-flash"),
+            "thread_id": thread_id
+        }
+        
+        # Include image data if present
+        if result.get("is_image"):
+            response_data["image_url"] = result.get("image_url")
+            response_data["is_image"] = True
+        
+        return ChatResponse(**response_data)
         
     except Exception as e:
         logger.error(f"Error in chat endpoint: {str(e)}")
