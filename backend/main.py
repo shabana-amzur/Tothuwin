@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from app.config import get_settings
-from app.api import chat, auth, documents
+from app.api import chat, auth, documents, nl2sql
 from app.api import threads, oauth
 from app.database import engine, Base
 
@@ -80,6 +80,7 @@ app.include_router(oauth.router)
 app.include_router(chat.router)
 app.include_router(documents.router)
 app.include_router(threads.router)
+app.include_router(nl2sql.router)
 
 # Mount static files for serving uploaded documents and generated images
 uploads_path = Path("uploads")
