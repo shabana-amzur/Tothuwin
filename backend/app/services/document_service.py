@@ -45,6 +45,7 @@ class DocumentService:
             chunk_size=1000,
             chunk_overlap=200,
             length_function=len,
+            separators=["\n\n", "\n", " ", ""]
         )
     
     def extract_text_from_pdf(self, file_path: str) -> str:
@@ -101,23 +102,25 @@ class DocumentService:
         chunks: List[str], 
         document_id: int, 
         user_id: int,
+        thread_id: int,
         filename: str
     ):
-        """Save document chunks to Chroma vector store"""
+        """Save document chunks to Chroma vector store with thread isolation"""
         try:
             # Create metadata for each chunk
             metadatas = [
                 {
                     "document_id": document_id,
                     "user_id": user_id,
+                    "thread_id": thread_id,
                     "filename": filename,
                     "chunk_index": i
                 }
                 for i in range(len(chunks))
             ]
             
-            # Create collection name based on user_id
-            collection_name = f"user_{user_id}_docs"
+            # Create collection name based on user_id and thread_id for isolation
+            collection_name = f"user_{user_id}_thread_{thread_id}"
             
             # Initialize or load vector store
             vectorstore = Chroma(
@@ -132,7 +135,7 @@ class DocumentService:
                 metadatas=metadatas
             )
             
-            logger.info(f"Saved {len(chunks)} chunks for document {document_id}")
+            logger.info(f"Saved {len(chunks)} chunks for document {document_id} in thread {thread_id}")
             
         except Exception as e:
             logger.error(f"Error saving to vector store: {str(e)}")
@@ -144,6 +147,7 @@ class DocumentService:
         file_type: str, 
         document_id: int,
         user_id: int,
+        thread_id: int,
         filename: str,
         db: Session
     ):
@@ -153,13 +157,19 @@ class DocumentService:
             logger.info(f"Extracting text from {filename}")
             text = self.extract_text(file_path, file_type)
             
+            if not text or len(text.strip()) < 10:
+                raise ValueError("Document appears to be empty or has insufficient content")
+            
             # Chunk text
             logger.info(f"Chunking text from {filename}")
             chunks = self.chunk_text(text)
             
-            # Save to vector store
-            logger.info(f"Saving {len(chunks)} chunks to vector store")
-            self.save_to_vectorstore(chunks, document_id, user_id, filename)
+            if not chunks:
+                raise ValueError("No chunks created from document")
+            
+            # Save to vector store with thread isolation
+            logger.info(f"Saving {len(chunks)} chunks to vector store for thread {thread_id}")
+            self.save_to_vectorstore(chunks, document_id, user_id, thread_id, filename)
             
             # Update document status in database
             doc = db.query(Document).filter(Document.id == document_id).first()
@@ -168,7 +178,7 @@ class DocumentService:
                 doc.chunk_count = len(chunks)
                 db.commit()
             
-            logger.info(f"Document {filename} processed successfully")
+            logger.info(f"Document {filename} processed successfully with {len(chunks)} chunks")
             
         except Exception as e:
             logger.error(f"Error processing document: {str(e)}")
@@ -179,19 +189,19 @@ class DocumentService:
                 db.commit()
             raise
     
-    def get_vectorstore_for_user(self, user_id: int):
-        """Get vector store for a specific user"""
-        collection_name = f"user_{user_id}_docs"
+    def get_vectorstore_for_thread(self, user_id: int, thread_id: int):
+        """Get vector store for a specific thread"""
+        collection_name = f"user_{user_id}_thread_{thread_id}"
         return Chroma(
             collection_name=collection_name,
             embedding_function=embeddings,
             persist_directory=str(CHROMA_PATH)
         )
     
-    def delete_document_from_vectorstore(self, document_id: int, user_id: int):
+    def delete_document_from_vectorstore(self, document_id: int, user_id: int, thread_id: int):
         """Delete document chunks from vector store"""
         try:
-            vectorstore = self.get_vectorstore_for_user(user_id)
+            vectorstore = self.get_vectorstore_for_thread(user_id, thread_id)
             # Filter and delete by document_id
             vectorstore._collection.delete(
                 where={"document_id": document_id}

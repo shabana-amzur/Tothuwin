@@ -30,11 +30,26 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 async def upload_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    thread_id: int = None,  # Thread ID for document isolation
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Upload a document (PDF, TXT, or DOCX)"""
+    """Upload a document (PDF, TXT, or DOCX) to a specific thread"""
     try:
+        # Validate thread exists and belongs to user if thread_id provided
+        if thread_id:
+            from app.models.database import ChatThread
+            thread = db.query(ChatThread).filter(
+                ChatThread.id == thread_id,
+                ChatThread.user_id == current_user.id
+            ).first()
+            
+            if not thread:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Thread not found or access denied"
+                )
+        
         # Validate file extension
         file_ext = Path(file.filename).suffix.lower()
         if file_ext not in ALLOWED_EXTENSIONS:
@@ -54,6 +69,13 @@ async def upload_document(
                 detail=f"File too large. Maximum size: {MAX_FILE_SIZE / (1024*1024)} MB"
             )
         
+        # Validate file is not empty
+        if file_size < 10:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File is empty or too small"
+            )
+        
         # Generate unique filename
         unique_filename = f"{uuid.uuid4()}{file_ext}"
         file_path = UPLOAD_DIR / unique_filename
@@ -66,6 +88,7 @@ async def upload_document(
         file_type = file_ext[1:]  # Remove the dot
         doc = Document(
             user_id=current_user.id,
+            thread_id=thread_id,
             filename=unique_filename,
             original_filename=file.filename,
             file_path=str(file_path),
@@ -77,7 +100,7 @@ async def upload_document(
         db.commit()
         db.refresh(doc)
         
-        logger.info(f"Document uploaded: {file.filename} by user {current_user.email}")
+        logger.info(f"Document uploaded: {file.filename} by user {current_user.email} to thread {thread_id}")
         
         # Process document in background
         doc_service = get_document_service()
@@ -87,6 +110,7 @@ async def upload_document(
             file_type,
             doc.id,
             current_user.id,
+            thread_id or 0,  # Default to 0 if no thread
             file.filename,
             db
         )
@@ -105,14 +129,18 @@ async def upload_document(
 
 @router.get("/", response_model=List[DocumentListItem])
 async def list_documents(
+    thread_id: int = None,  # Optional filter by thread
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get list of user's uploaded documents"""
+    """Get list of user's uploaded documents, optionally filtered by thread"""
     try:
-        documents = db.query(Document).filter(
-            Document.user_id == current_user.id
-        ).order_by(Document.created_at.desc()).all()
+        query = db.query(Document).filter(Document.user_id == current_user.id)
+        
+        if thread_id is not None:
+            query = query.filter(Document.thread_id == thread_id)
+        
+        documents = query.order_by(Document.created_at.desc()).all()
         
         return [DocumentListItem.model_validate(doc) for doc in documents]
         
@@ -151,7 +179,11 @@ async def delete_document(
         # Delete from vector store
         doc_service = get_document_service()
         try:
-            doc_service.delete_document_from_vectorstore(document_id, current_user.id)
+            doc_service.delete_document_from_vectorstore(
+                document_id, 
+                current_user.id, 
+                doc.thread_id or 0
+            )
         except Exception as e:
             logger.warning(f"Could not delete from vector store: {str(e)}")
         

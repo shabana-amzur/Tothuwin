@@ -88,7 +88,7 @@ If images don't appear:
 
 Your current API key is configured in `.env`:
 ```
-GOOGLE_GEMINI_API_KEY=AIzaSyCvWXr-fMYNWgTBRo43gPZwTlfz9q9E_0s
+GOOGLE_GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 If you want to enable Imagen 3, you may need to enable it in your Google Cloud Console for your API key.

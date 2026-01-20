@@ -10,6 +10,7 @@ from datetime import datetime
 import logging
 
 from ..config import get_settings
+from .image_service import get_image_service
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -63,6 +64,7 @@ class ChatService:
         user_message: str,
         conversation_history: List[Dict[str, str]] = None,
         user_id: int = None,
+        thread_id: int = None,
         use_rag: bool = False
     ) -> Dict[str, str]:
         """
@@ -72,26 +74,38 @@ class ChatService:
             user_message: The user's input message
             conversation_history: Optional list of previous messages
             user_id: User ID for RAG
+            thread_id: Thread ID for thread-specific RAG
             use_rag: Whether to use RAG with user's documents
         
         Returns:
             Dictionary with response message and metadata
         """
         try:
+            # Check if this is an image generation request
+            image_service = get_image_service()
+            if image_service.detect_image_request(user_message):
+                logger.info("Image generation request detected")
+                result = await image_service.generate_image(user_message, user_id)
+                return result
+            
             # Build message list
             messages = []
             
-            # Check if should use RAG
+            # Check if should use RAG with thread-specific documents
             rag_context = ""
-            if use_rag and user_id:
+            documents_found = False
+            if use_rag and user_id and thread_id:
                 from app.services.rag_service import get_rag_service
                 rag_service = get_rag_service()
                 
-                # Retrieve relevant chunks
-                chunks = rag_service.retrieve_relevant_chunks(user_id, user_message)
-                if chunks:
-                    rag_context = rag_service.format_context_for_prompt(chunks)
-                    logger.info(f"Using RAG with {len(chunks)} chunks for user {user_id}")
+                # Check if thread has documents
+                if rag_service.should_use_rag(user_id, thread_id):
+                    # Retrieve relevant chunks
+                    chunks = rag_service.retrieve_relevant_chunks(user_id, thread_id, user_message)
+                    if chunks:
+                        rag_context = rag_service.format_context_for_prompt(chunks)
+                        documents_found = True
+                        logger.info(f"Using RAG with {len(chunks)} chunks for user {user_id} thread {thread_id}")
             
             # Add system message for context
             system_prompt = (
@@ -100,9 +114,17 @@ class ChatService:
                 "Format your responses using markdown when appropriate."
             )
             
-            # If RAG context is available, add it to system prompt
+            # If RAG context is available, add it to system prompt with strict grounding instructions
             if rag_context:
-                system_prompt += "\n\n" + rag_context + "\nPlease answer the user's question based on the above context."
+                system_prompt += (
+                    "\n\n" + rag_context + 
+                    "\n\nIMPORTANT INSTRUCTIONS:\n"
+                    "1. Answer ONLY based on the information provided in the documents above.\n"
+                    "2. If the question cannot be answered using the document content, respond with: "
+                    "\"I cannot find this information in the uploaded document.\"\n"
+                    "3. Do not use external knowledge or make assumptions beyond what's in the documents.\n"
+                    "4. Cite the document name when providing information."
+                )
             
             messages.append(SystemMessage(content=system_prompt))
             
@@ -116,7 +138,7 @@ class ChatService:
             messages.append(HumanMessage(content=user_message))
             
             # Get response from Gemini
-            logger.info(f"Sending request to Gemini with {len(messages)} messages")
+            logger.info(f"Sending request to Gemini with {len(messages)} messages (RAG: {documents_found})")
             response = await self.llm.ainvoke(messages)
             
             logger.info("Successfully received response from Gemini")
@@ -124,7 +146,8 @@ class ChatService:
             return {
                 "message": response.content,
                 "model": settings.GEMINI_MODEL,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "used_rag": documents_found
             }
             
         except Exception as e:

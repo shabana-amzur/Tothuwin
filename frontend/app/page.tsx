@@ -241,10 +241,13 @@ export default function Home() {
 
       setMessages(prev => [...prev, assistantMessage]);
       
-      // If this was a new thread, update the current thread ID and refresh sidebar
-      if (currentThreadId === null && data.thread_id) {
-        setCurrentThreadId(data.thread_id);
-        setRefreshThreads(prev => prev + 1);
+      // Always update thread ID from response (backend always returns it)
+      if (data.thread_id) {
+        if (currentThreadId !== data.thread_id) {
+          console.log(`Setting thread ID to ${data.thread_id}`);
+          setCurrentThreadId(data.thread_id);
+          setRefreshThreads(prev => prev + 1);
+        }
       }
     } catch (error) {
       console.error('Error:', error);
@@ -277,13 +280,43 @@ export default function Home() {
 
   const uploadFile = async () => {
     if (!selectedFile) return;
+    
     setIsUploadingFile(true);
     
     try {
+      // If no thread exists, create one first
+      let threadId = currentThreadId;
+      if (!threadId) {
+        const createThreadResponse = await fetch('http://localhost:8001/api/threads/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            title: `Document: ${selectedFile.name}`
+          }),
+        });
+        
+        if (!createThreadResponse.ok) {
+          throw new Error('Failed to create thread for document');
+        }
+        
+        const threadData = await createThreadResponse.json();
+        threadId = threadData.id;
+        setCurrentThreadId(threadId);
+        setRefreshThreads(prev => prev + 1);
+        console.log(`Created new thread ${threadId} for document upload`);
+      }
+      
       const formData = new FormData();
       formData.append('file', selectedFile);
+      
+      // Add thread_id as a query parameter
+      const url = new URL('http://localhost:8001/api/documents/upload');
+      url.searchParams.append('thread_id', threadId.toString());
 
-      const response = await fetch('http://localhost:8001/api/documents/upload', {
+      const response = await fetch(url.toString(), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -292,12 +325,15 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload file');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Failed to upload file');
       }
+
+      const data = await response.json();
 
       const uploadMessage: Message = {
         role: 'assistant',
-        content: `✅ **File uploaded successfully!**\n\n**${selectedFile.name}** is being processed. You can now ask questions about this document.`,
+        content: `✅ **Document uploaded successfully!**\n\n**${selectedFile.name}** is being processed and will be available shortly.\n\nYou can now ask questions about this document. The AI will automatically use the document content to answer your questions.`,
         timestamp: new Date().toISOString(),
       };
       

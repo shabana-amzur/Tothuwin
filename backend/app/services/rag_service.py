@@ -31,10 +31,10 @@ class RAGService:
     def __init__(self):
         self.embeddings = embeddings
     
-    def get_vectorstore_for_user(self, user_id: int):
-        """Get vector store for a specific user"""
+    def get_vectorstore_for_thread(self, user_id: int, thread_id: int):
+        """Get vector store for a specific thread"""
         try:
-            collection_name = f"user_{user_id}_docs"
+            collection_name = f"user_{user_id}_thread_{thread_id}"
             return Chroma(
                 collection_name=collection_name,
                 embedding_function=self.embeddings,
@@ -46,15 +46,17 @@ class RAGService:
     
     def retrieve_relevant_chunks(
         self, 
-        user_id: int, 
+        user_id: int,
+        thread_id: int, 
         query: str, 
         k: int = 4
     ) -> List[Dict[str, any]]:
         """
-        Retrieve relevant document chunks for a query
+        Retrieve relevant document chunks for a query from a specific thread
         
         Args:
             user_id: User ID
+            thread_id: Thread ID
             query: User's question
             k: Number of chunks to retrieve
         
@@ -62,9 +64,19 @@ class RAGService:
             List of relevant chunks with metadata
         """
         try:
-            vectorstore = self.get_vectorstore_for_user(user_id)
+            vectorstore = self.get_vectorstore_for_thread(user_id, thread_id)
             
             if not vectorstore:
+                return []
+            
+            # Check if collection has any documents
+            try:
+                collection = vectorstore._collection
+                if collection.count() == 0:
+                    logger.info(f"No documents in thread {thread_id} for user {user_id}")
+                    return []
+            except Exception as e:
+                logger.warning(f"Could not check collection count: {str(e)}")
                 return []
             
             # Perform similarity search
@@ -79,7 +91,7 @@ class RAGService:
                     "relevance_score": float(score)
                 })
             
-            logger.info(f"Retrieved {len(chunks)} chunks for user {user_id}")
+            logger.info(f"Retrieved {len(chunks)} chunks for user {user_id} thread {thread_id}")
             return chunks
             
         except Exception as e:
@@ -100,10 +112,10 @@ class RAGService:
         
         return context
     
-    def should_use_rag(self, user_id: int) -> bool:
-        """Check if user has documents uploaded and should use RAG"""
+    def should_use_rag(self, user_id: int, thread_id: int) -> bool:
+        """Check if thread has documents uploaded and should use RAG"""
         try:
-            vectorstore = self.get_vectorstore_for_user(user_id)
+            vectorstore = self.get_vectorstore_for_thread(user_id, thread_id)
             if not vectorstore:
                 return False
             

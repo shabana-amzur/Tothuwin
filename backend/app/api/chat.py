@@ -93,19 +93,20 @@ async def chat(
         # Get chat service
         chat_service = get_chat_service()
         
-        # Check if user has documents and should use RAG
+        # Check if thread has documents and should use RAG (thread-specific)
         from app.services.rag_service import get_rag_service
         rag_service = get_rag_service()
-        use_rag = rag_service.should_use_rag(current_user.id)
+        use_rag = rag_service.should_use_rag(current_user.id, thread_id)
         
         if use_rag:
-            logger.info(f"Using RAG for user {current_user.email}")
+            logger.info(f"Using RAG for user {current_user.email} in thread {thread_id}")
         
-        # Get response from Gemini (with RAG if available)
+        # Get response from Gemini (with thread-specific RAG if available)
         result = await chat_service.get_chat_response(
             user_message=request.message,
             conversation_history=history,
             user_id=current_user.id,
+            thread_id=thread_id,
             use_rag=use_rag
         )
         

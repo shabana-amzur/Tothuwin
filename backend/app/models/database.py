@@ -68,6 +68,7 @@ class Document(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    thread_id = Column(Integer, ForeignKey("chat_threads.id"), nullable=True, index=True)  # Thread-specific documents
     filename = Column(String(255), nullable=False)
     original_filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=False)
@@ -79,3 +80,4 @@ class Document(Base):
     
     # Relationship
     user = relationship("User", back_populates="documents")
+    thread = relationship("ChatThread", foreign_keys=[thread_id])

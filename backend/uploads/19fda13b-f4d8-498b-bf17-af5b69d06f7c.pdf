@@ -1,0 +1,452 @@
+%PDF-1.3
+%ºß¬à
+3 0 obj
+<</Type /Page
+/Parent 1 0 R
+/Resources 2 0 R
+/MediaBox [0 0 595.2799999999999727 841.8899999999999864]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 3592
+>>
+stream
+0.5670000000000001 w
+0 G
+BT
+/F1 12 Tf
+13.7999999999999989 TL
+0 g
+39.6850393700787407 802.2049606299212883 Td
+(NetSuite Invoice Connector — ROI Report) Tj
+ET
+0. G
+0.5670000000000001 w
+0. G
+0.5670000000000001 w
+0.16 0.5 0.73 rg
+0.78 G
+0. w
+0.16 0.5 0.73 rg
+40. 785.1970866141731449 167.1529573590096334 -21.4999999999999964 re
+f
+BT
+/F2 10 Tf
+11.5 TL
+1. g
+45. 771.6970866141732586 Td
+() Tj
+ET
+0.16 0.5 0.73 rg
+0.78 G
+0. w
+0.16 0.5 0.73 rg
+207.1529573590096334 785.1970866141731449 150.2604676753782655 -21.4999999999999964 re
+f
+BT
+/F2 10 Tf
+11.5 TL
+1. g
+212.1529573590096049 771.6970866141732586 Td
+(Total number of invoices) Tj
+ET
+0.16 0.5 0.73 rg
+0.78 G
+0. w
+0.16 0.5 0.73 rg
+357.4134250343878421 785.1970866141731449 66.388665749656127 -21.4999999999999964 re
+f
+BT
+/F2 10 Tf
+11.5 TL
+1. g
+362.4134250343878421 771.6970866141732586 Td
+(Total cost) Tj
+ET
+0.16 0.5 0.73 rg
+0.78 G
+0. w
+0.16 0.5 0.73 rg
+423.8020907840440259 785.1970866141731449 131.4779092159559752 -21.4999999999999964 re
+f
+BT
+/F2 10 Tf
+11.5 TL
+1. g
+428.8020907840440259 771.6970866141732586 Td
+(Time to process \(hrs\)) Tj
+ET
+0. G
+0.5670000000000001 w
+0.96 g
+0.78 G
+0. w
+0.96 g
+40. 763.6970866141731449 167.1529573590096334 -21.4999999999999964 re
+f
+BT
+/F1 10 Tf
+11.5 TL
+0.314 g
+45. 750.1970866141732586 Td
+(Without invoice connector) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+207.1529573590096334 763.6970866141731449 150.2604676753782655 -21.4999999999999964 re
+f
+BT
+/F1 10 Tf
+11.5 TL
+0.314 g
+212.1529573590096049 750.1970866141732586 Td
+(250) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+357.4134250343878421 763.6970866141731449 66.388665749656127 -21.4999999999999964 re
+f
+BT
+/F1 10 Tf
+11.5 TL
+0.314 g
+362.4134250343878421 750.1970866141732586 Td
+(234.38) Tj
+ET
+0.96 g
+0.78 G
+0. w
+0.96 g
+423.8020907840440259 763.6970866141731449 131.4779092159559752 -21.4999999999999964 re
+f
+BT
+/F1 10 Tf
+11.5 TL
+0.314 g
+428.8020907840440259 750.1970866141732586 Td
+(4.69) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+40. 742.1970866141732586 167.1529573590096334 -21.4999999999999964 re
+f
+BT
+/F1 10 Tf
+11.5 TL
+0.314 g
+45. 728.6970866141732586 Td
+(With Amzur invoice connector) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+207.1529573590096334 742.1970866141732586 150.2604676753782655 -21.4999999999999964 re
+f
+BT
+/F1 10 Tf
+11.5 TL
+0.314 g
+212.1529573590096049 728.6970866141732586 Td
+(250) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+357.4134250343878421 742.1970866141732586 66.388665749656127 -21.4999999999999964 re
+f
+BT
+/F1 10 Tf
+11.5 TL
+0.314 g
+362.4134250343878421 728.6970866141732586 Td
+(0.00) Tj
+ET
+1. g
+0.78 G
+0. w
+1. g
+423.8020907840440259 742.1970866141732586 131.4779092159559752 -21.4999999999999964 re
+f
+BT
+/F1 10 Tf
+11.5 TL
+0.314 g
+428.8020907840440259 728.6970866141732586 Td
+(3.13) Tj
+ET
+0. G
+0.5670000000000001 w
+0.78 G
+0. w
+0. G
+0.5670000000000001 w
+0. G
+0.5670000000000001 w
+BT
+/F1 11 Tf
+12.6499999999999986 TL
+0. g
+39.6850393700787407 698.0199212598424765 Td
+(Monthly totals — Without: $234.38 / 4.69 hrs) Tj
+ET
+BT
+/F1 11 Tf
+12.6499999999999986 TL
+0. g
+39.6850393700787407 681.0120472440944468 Td
+(Monthly totals — With:    $0.00 / 3.13 hrs) Tj
+ET
+BT
+/F1 11 Tf
+12.6499999999999986 TL
+0. g
+39.6850393700787407 664.0041732283464171 Td
+(Yearly totals  — Without: $2812.50 / 56.25 hrs) Tj
+ET
+BT
+/F1 11 Tf
+12.6499999999999986 TL
+0. g
+39.6850393700787407 646.9962992125983874 Td
+(Yearly totals  — With:    $0.00 / 37.50 hrs) Tj
+ET
+BT
+/F1 12 Tf
+13.7999999999999989 TL
+0. g
+39.6850393700787407 624.319133858267719 Td
+(Savings — Monthly: $234.38 / 1.56 hrs) Tj
+ET
+BT
+/F1 12 Tf
+13.7999999999999989 TL
+0. g
+39.6850393700787407 607.3112598425196893 Td
+(Savings — Yearly:  $2812.50 / 18.75 hrs) Tj
+ET
+endstream
+endobj
+1 0 obj
+<</Type /Pages
+/Kids [3 0 R ]
+/Count 1
+>>
+endobj
+5 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+6 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+7 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+8 0 obj
+<<
+/Type /Font
+/BaseFont /Helvetica-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+9 0 obj
+<<
+/Type /Font
+/BaseFont /Courier
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+10 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+11 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-Oblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+12 0 obj
+<<
+/Type /Font
+/BaseFont /Courier-BoldOblique
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+13 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+14 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Bold
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+15 0 obj
+<<
+/Type /Font
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/BaseFont /Times-BoldItalic
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+17 0 obj
+<<
+/Type /Font
+/BaseFont /ZapfDingbats
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+18 0 obj
+<<
+/Type /Font
+/BaseFont /Symbol
+/Subtype /Type1
+/FirstChar 32
+/LastChar 255
+>>
+endobj
+2 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Font <<
+/F1 5 0 R
+/F2 6 0 R
+/F3 7 0 R
+/F4 8 0 R
+/F5 9 0 R
+/F6 10 0 R
+/F7 11 0 R
+/F8 12 0 R
+/F9 13 0 R
+/F10 14 0 R
+/F11 15 0 R
+/F12 16 0 R
+/F13 17 0 R
+/F14 18 0 R
+>>
+/XObject <<
+>>
+>>
+endobj
+19 0 obj
+<<
+/Producer (jsPDF 2.5.1)
+/CreationDate (D:20251014233610+05'30')
+>>
+endobj
+20 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction [3 0 R /FitH null]
+/PageLayout /OneColumn
+>>
+endobj
+xref
+0 21
+0000000000 65535 f 
+0000003796 00000 n 
+0000005613 00000 n 
+0000000015 00000 n 
+0000000152 00000 n 
+0000003853 00000 n 
+0000003978 00000 n 
+0000004108 00000 n 
+0000004241 00000 n 
+0000004378 00000 n 
+0000004501 00000 n 
+0000004630 00000 n 
+0000004762 00000 n 
+0000004898 00000 n 
+0000005026 00000 n 
+0000005153 00000 n 
+0000005282 00000 n 
+0000005415 00000 n 
+0000005517 00000 n 
+0000005861 00000 n 
+0000005947 00000 n 
+trailer
+<<
+/Size 21
+/Root 20 0 R
+/Info 19 0 R
+/ID [ <E46430479EB7EA234742B3D12EB9B982> <E46430479EB7EA234742B3D12EB9B982> ]
+>>
+startxref
+6051
+%%EOF
