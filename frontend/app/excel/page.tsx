@@ -216,29 +216,7 @@ export default function ExcelPage() {
   if (!user) return null;
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
-      {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/" 
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                ← Back to Chat
-              </Link>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text">
-                📊 Excel Analysis
-              </h1>
-            </div>
-            <div className="text-gray-400 text-sm">
-              {user.email}
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="h-full flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Upload Section */}

@@ -5,6 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from './contexts/AuthContext';
 import ThreadSidebar from './components/ThreadSidebar';
 import MarkdownRenderer from './components/MarkdownRenderer';
+import dynamic from 'next/dynamic';
+
+// Import feature pages
+const NL2SQLPage = dynamic(() => import('./sql/page'), { ssr: false });
+const ExcelPage = dynamic(() => import('./excel/page'), { ssr: false });
+const TicTacToePage = dynamic(() => import('./tictactoe/page'), { ssr: false });
 
 interface Message {
   role: 'user' | 'assistant';
@@ -55,8 +61,11 @@ export default function Home() {
   const [useDemoMode, setUseDemoMode] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   
-  // Agent mode state
-  const [useAgent, setUseAgent] = useState(false);
+  // Agent mode state (always enabled)
+  const [useAgent, setUseAgent] = useState(true);
+  
+  // Active feature state
+  const [activeFeature, setActiveFeature] = useState<'chat' | 'sql' | 'excel' | 'game'>('chat');
 
   // Handle OAuth callback with token in URL
   useEffect(() => {
@@ -576,7 +585,7 @@ export default function Home() {
       
       setMessages(prev => [...prev, assistantMessage]);
       setSelectedImage(null);
-      setShowImageValidation(false);
+      setActiveFeature('chat');
       if (imageInputRef.current) {
         imageInputRef.current.value = '';
       }
@@ -588,6 +597,7 @@ export default function Home() {
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, errorMessage]);
+      setActiveFeature('chat');
     } finally {
       setIsValidatingImage(false);
     }
@@ -657,7 +667,7 @@ export default function Home() {
       };
       
       setMessages(prev => [...prev, assistantMessage]);
-      setShowImageValidation(false);
+      setActiveFeature('chat');
     } catch (error) {
       console.error('Demo validation error:', error);
       const errorMessage: Message = {
@@ -666,10 +676,14 @@ export default function Home() {
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, errorMessage]);
+      setActiveFeature('chat');
     } finally {
       setIsValidatingImage(false);
     }
   };
+
+  // Alias for validateDemoMode to maintain compatibility with UI
+  const validateImageDemo = validateDemoMode;
 
   if (authLoading || !user) {
     return (
@@ -686,35 +700,42 @@ export default function Home() {
         onSelectThread={handleSelectThread}
         currentThreadId={currentThreadId}
         refreshTrigger={refreshThreads}
+        onNavigate={(path) => router.push(path)}
+        onToggleImageValidation={() => setActiveFeature('image')}
+        onFeatureSelect={(feature) => setActiveFeature(feature)}
       />
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Header */}
         <header className="bg-gray-800 border-b border-gray-700 px-6 py-4 shadow-sm flex justify-between items-center flex-shrink-0">
-          <div>
-            <h1 className="text-xl font-bold text-white">AI Chat Assistant</h1>
-            <p className="text-sm text-gray-400">Powered by Google Gemini</p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-white">
+                {activeFeature === 'chat' && 'AI Chat Assistant'}
+                {activeFeature === 'sql' && '📊 SQL Query'}
+                {activeFeature === 'excel' && '📈 Excel Analysis'}
+                {activeFeature === 'game' && '🎮 Tic-Tac-Toe'}
+                {activeFeature === 'image' && '🖼️ Image Validation'}
+              </h1>
+              <p className="text-sm text-gray-400">
+                {activeFeature === 'chat' && 'Powered by Google Gemini'}
+                {activeFeature === 'sql' && 'Natural Language to SQL'}
+                {activeFeature === 'excel' && 'AI-Powered Data Analysis'}
+                {activeFeature === 'game' && 'Play against AI'}
+                {activeFeature === 'image' && 'Validate Documents with AI'}
+              </p>
+            </div>
+            {activeFeature !== 'chat' && (
+              <button
+                onClick={() => setActiveFeature('chat')}
+                className="text-sm bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                ← Back to Chat
+              </button>
+            )}
           </div>
           <div className="flex items-center space-x-4">
-            <button
-              onClick={() => router.push('/sql')}
-              className="flex items-center space-x-2 text-sm bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-              </svg>
-              <span>SQL Query</span>
-            </button>
-            <button
-              onClick={() => router.push('/excel')}
-              className="flex items-center space-x-2 text-sm bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Excel Analysis</span>
-            </button>
             <span className="text-sm text-gray-300">
               {user.full_name || user.username}
             </span>
@@ -727,6 +748,9 @@ export default function Home() {
           </div>
         </header>
 
+        {/* Content Area - Conditional Rendering */}
+        {activeFeature === 'chat' ? (
+          <>
         {/* Messages Container */}
         <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 scroll-smooth">
           <div className="max-w-4xl mx-auto space-y-4">
@@ -875,145 +899,6 @@ export default function Home() {
                 </div>
               </div>
             )}
-
-            {/* Image validation section */}
-            {showImageValidation && (
-              <div className="mb-3 bg-purple-900 bg-opacity-30 border border-purple-700 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-purple-300">🖼️ Image Validation</h3>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowImageValidation(false);
-                      setSelectedImage(null);
-                      if (imageInputRef.current) imageInputRef.current.value = '';
-                    }}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    ✕
-                  </button>
-                </div>
-                
-                <div className="space-y-3">
-                  {/* Demo mode toggle */}
-                  <div className="flex items-center justify-between bg-gray-700 rounded-lg px-4 py-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-300">🎭 Demo Mode</span>
-                      <span className="text-xs text-gray-500">(No API required)</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setUseDemoMode(!useDemoMode)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        useDemoMode ? 'bg-purple-600' : 'bg-gray-600'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          useDemoMode ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Document type selector */}
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-2">Document Type:</label>
-                    <select
-                      value={documentType}
-                      onChange={(e) => setDocumentType(e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    >
-                      <option value="invoice">Invoice</option>
-                      <option value="receipt">Receipt</option>
-                      <option value="id_card">ID Card</option>
-                    </select>
-                  </div>
-
-                  {/* Image file input - only show if not in demo mode */}
-                  {!useDemoMode && (
-                    <>
-                      <input
-                        ref={imageInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageSelect}
-                        className="hidden"
-                          />
-
-                      {/* Selected image display or demo button */}
-                      {selectedImage ? (
-                        <div className="flex items-center justify-between bg-gray-700 rounded-lg px-4 py-2">
-                          <div className="flex items-center space-x-2">
-                            <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="text-sm text-gray-300">{selectedImage.name}</span>
-                            <span className="text-xs text-gray-500">({(selectedImage.size / 1024).toFixed(1)} KB)</span>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button
-                              type="button"
-                              onClick={validateImage}
-                              disabled={isValidatingImage}
-                              className="text-sm bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded disabled:opacity-50"
-                            >
-                              {isValidatingImage ? 'Validating...' : 'Validate'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={removeSelectedImage}
-                              className="text-sm text-gray-400 hover:text-white"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => imageInputRef.current?.click()}
-                          className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition-colors"
-                        >
-                          Choose Image File
-                        </button>
-                      )}
-                    </>
-                  )}
-
-                  {/* Demo mode button */}
-                  {useDemoMode && (
-                    <button
-                      type="button"
-                      onClick={validateImage}
-                      disabled={isValidatingImage}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded transition-colors disabled:opacity-50"
-                    >
-                      {isValidatingImage ? 'Running Demo...' : '🎭 Run Demo Validation'}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* Agent Mode Toggle */}
-            <div className="mb-3 flex items-center justify-between bg-gray-700 rounded-lg px-4 py-2">
-              <div className="flex items-center space-x-3">
-                <span className="text-sm font-medium text-gray-300">🤖 Agent Mode</span>
-                <span className="text-xs text-gray-400">
-                  {useAgent ? '12 tools: math, text, date, validation, random, units, world time & more' : 'Standard chat mode'}
-                </span>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={useAgent}
-                  onChange={(e) => setUseAgent(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
             
             <div className="flex space-x-3">
               {/* Hidden file input */}
@@ -1035,19 +920,6 @@ export default function Home() {
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-              </button>
-
-              {/* Image validation button */}
-              <button
-                type="button"
-                onClick={() => setShowImageValidation(!showImageValidation)}
-                disabled={isLoading || isValidatingImage}
-                className={`${showImageValidation ? 'bg-purple-600' : 'bg-gray-700'} hover:bg-purple-600 text-white p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-                title="Validate Image (Invoice, Receipt, ID)"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </button>
               
@@ -1088,6 +960,136 @@ export default function Home() {
             </div>
           </form>
         </div>
+          </>
+        ) : (
+          /* Feature pages rendered directly */
+          <div className="flex-1 overflow-hidden">
+            {activeFeature === 'sql' && <NL2SQLPage />}
+            {activeFeature === 'excel' && <ExcelPage />}
+            {activeFeature === 'game' && <TicTacToePage />}
+            {activeFeature === 'image' && (
+              <div className="h-full overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                  <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <h2 className="text-2xl font-bold text-white mb-6">🖼️ Image Validation</h2>
+                    
+                    {/* Demo mode toggle */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between bg-gray-700 rounded-lg px-4 py-3">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-300">🎭 Demo Mode</span>
+                          <span className="text-xs text-gray-500">(No API required)</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setUseDemoMode(!useDemoMode)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            useDemoMode ? 'bg-purple-600' : 'bg-gray-600'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              useDemoMode ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Document type selector */}
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Document Type:</label>
+                      <select
+                        value={documentType}
+                        onChange={(e) => setDocumentType(e.target.value)}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      >
+                        <option value="invoice">Invoice</option>
+                        <option value="receipt">Receipt</option>
+                        <option value="id_card">ID Card</option>
+                      </select>
+                    </div>
+
+                    {/* Image file input - only show if not in demo mode */}
+                    {!useDemoMode && (
+                      <>
+                        <input
+                          ref={imageInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageSelect}
+                          className="hidden"
+                        />
+
+                        {selectedImage ? (
+                          <div className="mb-6">
+                            <div className="flex items-center justify-between bg-gray-700 rounded-lg px-4 py-3 mb-4">
+                              <div className="flex items-center space-x-2">
+                                <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span className="text-sm text-gray-300">{selectedImage.name}</span>
+                                <span className="text-xs text-gray-500">({(selectedImage.size / 1024).toFixed(1)} KB)</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={removeSelectedImage}
+                                className="text-sm text-gray-400 hover:text-white"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={validateImage}
+                              disabled={isValidatingImage}
+                              className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg transition-colors disabled:opacity-50 font-medium"
+                            >
+                              {isValidatingImage ? 'Validating...' : 'Validate Image'}
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => imageInputRef.current?.click()}
+                            className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg transition-colors font-medium mb-6"
+                          >
+                            Choose Image File
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {/* Demo mode button */}
+                    {useDemoMode && (
+                      <div className="mb-6">
+                        <button
+                          type="button"
+                          onClick={validateImageDemo}
+                          disabled={isValidatingImage}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg transition-colors disabled:opacity-50 font-medium"
+                        >
+                          {isValidatingImage ? 'Validating...' : 'Run Demo Validation'}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Information */}
+                    <div className="bg-blue-900 bg-opacity-30 border border-blue-700 rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-blue-300 mb-2">ℹ️ How it works:</h3>
+                      <ul className="text-xs text-gray-400 space-y-1">
+                        <li>• <strong>Demo Mode:</strong> Uses simulated validation (no API calls)</li>
+                        <li>• <strong>Real Mode:</strong> Upload an image to validate with AI</li>
+                        <li>• Supports invoices, receipts, and ID cards</li>
+                        <li>• Results will appear in the chat</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

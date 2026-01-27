@@ -5,7 +5,7 @@ Handles all chat-related endpoints
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
-from typing import Dict, List
+from typing import Dict, List, Optional
 import logging
 
 from ..models.chat import ChatRequest, ChatResponse, ErrorResponse
@@ -91,15 +91,16 @@ async def chat(
         
         logger.info(f"Retrieved {len(recent_messages)} previous conversation pairs for thread {thread_id}")
         
-        # Check if agent mode is requested
-        if request.use_agent:
-            logger.info(f"🤖 Using AGENT mode for user {current_user.email}")
-            agent_response = run_basic_agent(request.message)
-            result = {
-                "message": agent_response,
-                "model": "gemini-2.5-flash (Agent Mode)"
-            }
-        else:
+        # Always use agent mode for intelligent responses
+        logger.info(f"🤖 Using AGENT mode for user {current_user.email}")
+        agent_response = run_basic_agent(request.message)
+        result = {
+            "message": agent_response,
+            "model": "gemini-2.5-flash (Agent Mode)"
+        }
+        
+        # Fallback to regular chat if needed
+        if False:
             # Get chat service
             chat_service = get_chat_service()
             

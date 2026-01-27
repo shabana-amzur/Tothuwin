@@ -139,52 +139,16 @@ export default function NL2SQLPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-900">
+      <div className="flex h-full items-center justify-center bg-gray-900">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 px-6 py-4 shadow-sm">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => router.push('/')}
-              className="text-gray-400 hover:text-white transition-colors"
-              title="Back to Chat"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-white">Natural Language to SQL</h1>
-              <p className="text-sm text-gray-400">Ask questions about your database in plain English</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={fetchSchema}
-              disabled={isLoading}
-              className="text-sm bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {schemaVisible ? 'Hide Schema' : 'Show Schema'}
-            </button>
-            <span className="text-sm text-gray-300">{user.full_name || user.username}</span>
-            <button 
-              onClick={logout}
-              className="text-sm text-red-400 hover:text-red-300 font-medium transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className="h-full overflow-hidden bg-gray-900 text-white flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Schema Panel */}
         {schemaVisible && schema && (
           <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
@@ -446,6 +410,7 @@ export default function NL2SQLPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

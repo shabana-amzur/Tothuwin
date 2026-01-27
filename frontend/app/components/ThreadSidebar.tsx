@@ -15,13 +15,17 @@ interface ThreadSidebarProps {
   onSelectThread: (threadId: number | null) => void;
   currentThreadId: number | null;
   refreshTrigger?: number;
+  onNavigate?: (path: string) => void;
+  onToggleImageValidation?: () => void;
+  onFeatureSelect?: (feature: 'sql' | 'excel' | 'game') => void;
 }
 
-export default function ThreadSidebar({ onSelectThread, currentThreadId, refreshTrigger }: ThreadSidebarProps) {
+export default function ThreadSidebar({ onSelectThread, currentThreadId, refreshTrigger, onNavigate, onToggleImageValidation, onFeatureSelect }: ThreadSidebarProps) {
   const { token } = useAuth();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isChatsOpen, setIsChatsOpen] = useState(true); // Accordion state
 
   const loadThreads = async () => {
     if (!token) return;
@@ -91,18 +95,72 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
 
   return (
     <div className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col h-screen">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-800">
+      {/* Sticky Header with Feature Buttons */}
+      <div className="sticky top-0 z-10 bg-gray-900 p-4 border-b border-gray-800 space-y-2">
         <button
           onClick={handleNewChat}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
         >
-          + New Chat
+          <span>✏️</span>
+          <span>New Chat</span>
+        </button>
+        
+        {/* Feature Buttons */}
+        <button
+          onClick={() => onFeatureSelect?.('sql')}
+          className="w-full bg-purple-600/80 hover:bg-purple-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-start gap-2"
+        >
+          <span>📊</span>
+          <span>SQL Query</span>
+        </button>
+        
+        <button
+          onClick={() => onFeatureSelect?.('excel')}
+          className="w-full bg-green-600/80 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-start gap-2"
+        >
+          <span>📈</span>
+          <span>Excel Analysis</span>
+        </button>
+        
+        <button
+          onClick={() => onToggleImageValidation?.()}
+          className="w-full bg-orange-600/80 hover:bg-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-start gap-2"
+        >
+          <span>🔍</span>
+          <span>Image Validation</span>
+        </button>
+        
+        <button
+          onClick={() => onFeatureSelect?.('game')}
+          className="w-full bg-blue-500/80 hover:bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-start gap-2"
+        >
+          <span>🎮</span>
+          <span>Tic-Tac-Toe</span>
         </button>
       </div>
 
-      {/* Threads List */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Scrollable Threads Section */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 pt-3">
+          {/* Accordion Header */}
+          <button
+            onClick={() => setIsChatsOpen(!isChatsOpen)}
+            className="w-full flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 hover:text-gray-300 transition-colors"
+          >
+            <span>Your chats</span>
+            <svg
+              className={`w-4 h-4 transition-transform duration-200 ${isChatsOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          {/* Collapsible Content */}
+          {isChatsOpen && (
+            <>
         {loading && (
           <div className="text-gray-400 text-center py-8">
             Loading threads...
@@ -154,10 +212,13 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
             </div>
           </div>
         ))}
+            </>
+          )}
+        </div>
       </div>
 
-      {/* User Info */}
-      <div className="p-4 border-t border-gray-800">
+      {/* Sticky User Info Footer */}
+      <div className="sticky bottom-0 bg-gray-900 p-4 border-t border-gray-800">
         <button
           onClick={() => {
             if (confirm('Are you sure you want to log out?')) {

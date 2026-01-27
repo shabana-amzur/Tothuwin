@@ -34,13 +34,10 @@ python-magic==0.4.27  # File type detection
 tiktoken==0.8.0  # Token counting
 python-multipart==0.0.9  # For file uploads
 pytz==2024.1  # Timezone support for world time tool
-<<<<<<< HEAD
 openpyxl==3.1.5  # Excel file processing
 xlrd==2.0.1  # Legacy Excel file support
 gspread==6.1.4  # Google Sheets API
 oauth2client==4.1.3  # Google OAuth for Sheets
-=======
->>>>>>> 0e7bc1e (feat: Add NL2SQL write operations with confirmation modal)
 
 # Image Processing & Vision
 Pillow==11.0.0  # Image processing
