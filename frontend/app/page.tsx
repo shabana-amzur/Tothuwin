@@ -61,11 +61,13 @@ export default function Home() {
   const [useDemoMode, setUseDemoMode] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   
-  // Agent mode state (always enabled)
-  const [useAgent, setUseAgent] = useState(true);
+  // Model selection state
+  const [selectedModel, setSelectedModel] = useState<'gemini' | 'agent' | 'mcp-style'>('gemini');
+  const [showModelSelector, setShowModelSelector] = useState(false);
+  const modelSelectorRef = useRef<HTMLDivElement>(null);
   
   // Active feature state
-  const [activeFeature, setActiveFeature] = useState<'chat' | 'sql' | 'excel' | 'game'>('chat');
+  const [activeFeature, setActiveFeature] = useState<'chat' | 'sql' | 'excel' | 'game' | 'image'>('chat');
 
   // Handle OAuth callback with token in URL
   useEffect(() => {
@@ -86,6 +88,23 @@ export default function Home() {
         });
     }
   }, [searchParams, loginWithToken]);
+  
+  // Close model selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modelSelectorRef.current && !modelSelectorRef.current.contains(event.target as Node)) {
+        setShowModelSelector(false);
+      }
+    };
+    
+    if (showModelSelector) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showModelSelector]);
 
   // Load Excel context from localStorage on mount
   useEffect(() => {
@@ -290,7 +309,7 @@ export default function Home() {
         body: JSON.stringify({
           message: userMessage.content,
           thread_id: currentThreadId,
-          use_agent: useAgent,
+          model: selectedModel,
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -900,6 +919,91 @@ export default function Home() {
               </div>
             )}
             
+            {/* Model Selector */}
+            <div ref={modelSelectorRef} className="mb-3 relative">
+              <button
+                type="button"
+                onClick={() => setShowModelSelector(!showModelSelector)}
+                className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors border border-gray-600"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span className="text-sm">
+                  {selectedModel === 'gemini' && '💬 Gemini'}
+                  {selectedModel === 'agent' && '🤖 Agent'}
+                  {selectedModel === 'mcp-style' && '🎯 MCP Style'}
+                </span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {/* Model dropdown */}
+              {showModelSelector && (
+                <div className="absolute bottom-full mb-2 left-0 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-50 min-w-[280px]">
+                  <div className="p-2">
+                    <div className="text-xs text-gray-400 px-3 py-2 font-semibold">Select Model</div>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedModel('gemini');
+                        setShowModelSelector(false);
+                      }}
+                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors ${
+                        selectedModel === 'gemini' ? 'bg-gray-700 border-l-2 border-blue-500' : ''
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <span className="text-xl">💬</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-white">Gemini</div>
+                          <div className="text-xs text-gray-400">Standard chat model with RAG support</div>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedModel('agent');
+                        setShowModelSelector(false);
+                      }}
+                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors ${
+                        selectedModel === 'agent' ? 'bg-gray-700 border-l-2 border-green-500' : ''
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <span className="text-xl">🤖</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-white">Agent</div>
+                          <div className="text-xs text-gray-400">ReAct pattern with tools (calculator, Wikipedia)</div>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedModel('mcp-style');
+                        setShowModelSelector(false);
+                      }}
+                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors ${
+                        selectedModel === 'mcp-style' ? 'bg-gray-700 border-l-2 border-purple-500' : ''
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <span className="text-xl">🎯</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-white">MCP Style Agent</div>
+                          <div className="text-xs text-gray-400">Planner-Selector-Executor-Synthesizer pattern</div>
+                          <div className="text-xs text-purple-400 mt-1">→ Calculator, Text Analyzer, Search</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
             <div className="flex space-x-3">
               {/* Hidden file input */}
               <input
@@ -966,6 +1070,7 @@ export default function Home() {
           <div className="flex-1 overflow-hidden">
             {activeFeature === 'sql' && <NL2SQLPage />}
             {activeFeature === 'excel' && <ExcelPage />}
+            {activeFeature === 'game' && <TicTacToePage />}
             {activeFeature === 'game' && <TicTacToePage />}
             {activeFeature === 'image' && (
               <div className="h-full overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">

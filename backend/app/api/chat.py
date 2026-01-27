@@ -11,6 +11,7 @@ import logging
 from ..models.chat import ChatRequest, ChatResponse, ErrorResponse
 from ..services.chat_service import get_chat_service
 from ..services.basic_agent import run_basic_agent
+from ..services.mcp_style_agent import run_mcp_agent
 from ..database import get_db
 from ..models.database import User, ChatHistory, ChatThread
 from ..utils.auth import get_current_active_user
@@ -91,28 +92,43 @@ async def chat(
         
         logger.info(f"Retrieved {len(recent_messages)} previous conversation pairs for thread {thread_id}")
         
-        # Always use agent mode for intelligent responses
-        logger.info(f"🤖 Using AGENT mode for user {current_user.email}")
-        agent_response = run_basic_agent(request.message)
-        result = {
-            "message": agent_response,
-            "model": "gemini-2.5-flash (Agent Mode)"
-        }
+        # Route to appropriate model based on request
+        selected_model = request.model or "gemini"
+        logger.info(f"🎯 Using model: {selected_model} for user {current_user.email}")
         
-        # Fallback to regular chat if needed
-        if False:
-            # Get chat service
+        if selected_model == "mcp-style":
+            # Use MCP Style Agent (Planner-Selector-Executor-Synthesizer)
+            logger.info(f"🤖 Using MCP STYLE AGENT for user {current_user.email}")
+            try:
+                mcp_response = run_mcp_agent(request.message)
+                result = {
+                    "message": mcp_response,
+                    "model": "MCP Style Agent"
+                }
+            except Exception as e:
+                logger.error(f"MCP Style Agent error: {str(e)}")
+                result = {
+                    "message": f"MCP Style Agent encountered an error: {str(e)}\\n\\nPlease try again or select a different model.",
+                    "model": "MCP Style Agent (Error)"
+                }
+        elif selected_model == "agent" or request.use_agent:
+            # Use Basic Agent (ReAct pattern with tools)
+            logger.info(f"🤖 Using BASIC AGENT for user {current_user.email}")
+            agent_response = run_basic_agent(request.message)
+            result = {
+                "message": agent_response,
+                "model": "Gemini Agent"
+            }
+        else:
+            # Use regular Gemini model
+            logger.info(f"💬 Using GEMINI for user {current_user.email}")
             chat_service = get_chat_service()
             
-            # Check if thread has documents and should use RAG (thread-specific)
+            # Check if thread has documents and should use RAG
             from app.services.rag_service import get_rag_service
             rag_service = get_rag_service()
             use_rag = rag_service.should_use_rag(current_user.id, thread_id)
             
-            if use_rag:
-                logger.info(f"Using RAG for user {current_user.email} in thread {thread_id}")
-            
-            # Get response from Gemini (with thread-specific RAG if available)
             result = await chat_service.get_chat_response(
                 user_message=request.message,
                 conversation_history=history,

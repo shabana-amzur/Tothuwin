@@ -33,6 +33,10 @@ class ChatRequest(BaseModel):
         default=False,
         description="Use agent mode with tools (calculator, text utilities)"
     )
+    model: Optional[str] = Field(
+        default="gemini",
+        description="Model to use: 'gemini', 'agent', or 'mcp-style'"
+    )
     
     class Config:
         json_schema_extra = {

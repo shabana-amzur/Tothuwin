@@ -67,7 +67,7 @@ fastapi-cors==0.0.6  # If using FastAPI
 
 # Data Processing
 pandas==2.2.3
-numpy==2.2.1
+numpy==1.26.4
 
 # Utilities
 email-validator==2.2.0
@@ -82,4 +82,11 @@ flake8==7.1.1
 mypy==1.14.1
 
 # Development
-ipython==8.30.0
+ipython==8.18.1
+
+# Image Generation (async HTTP requests)
+aiohttp==3.9.1
+
+# Alternative Embeddings (free, no API key needed)
+sentence-transformers==2.6.0
+langchain-huggingface==0.1.2
