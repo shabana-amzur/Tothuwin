@@ -310,6 +310,10 @@ async def agent_chat(
         }
 
 
+@router.get("/history")
+async def get_chat_history(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
     limit: int = 50,
     session_id: str = None
 ):
