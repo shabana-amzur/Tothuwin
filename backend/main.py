@@ -13,7 +13,7 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.api import chat, auth, documents, nl2sql, excel
-from app.api import threads, oauth, image_validation, tictactoe, mcp
+from app.api import threads, oauth, image_validation, tictactoe, mcp, n8n
 from app.database import engine, Base
 
 # Configure logging
@@ -85,6 +85,7 @@ app.include_router(excel.router)
 app.include_router(image_validation.router)
 app.include_router(tictactoe.router, prefix="/api/tictactoe", tags=["Tic-Tac-Toe"])
 app.include_router(mcp.router)
+app.include_router(n8n.router, prefix="/api/n8n", tags=["N8N Agents"])
 
 # Mount static files for serving uploaded documents and generated images
 uploads_path = Path("uploads")
