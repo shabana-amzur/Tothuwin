@@ -205,14 +205,111 @@ async def get_model_info() -> Dict[str, str]:
         )
 
 
-@router.get(
-    "/chat/history",
-    summary="Get chat history",
-    description="Get chat history for the current user"
+@router.post(
+    "/agent/chat",
+    summary="Simple agent endpoint for n8n",
+    description="Lightweight endpoint that returns only the agent response (for n8n orchestration)"
 )
-async def get_chat_history(
+async def agent_chat(
+    request: ChatRequest,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db)
+) -> Dict:
+    """
+    Simplified chat endpoint for n8n integration.
+    Returns only the agent response without UI logic.
+    
+    **Request Body:**
+    - message: User's message (required)
+    - thread_id: Thread ID (optional)
+    - model: Model to use (optional, defaults to 'gemini')
+    
+    **Returns:**
+    - response: Agent's text response
+    - model: Model used
+    - thread_id: Thread ID
+    """
+    try:
+        logger.info(f"[N8N] User {current_user.email} sent message via n8n")
+        
+        # Handle thread
+        thread_id = request.thread_id
+        if thread_id is None:
+            new_thread = ChatThread(user_id=current_user.id, title="N8N Conversation")
+            db.add(new_thread)
+            db.commit()
+            db.refresh(new_thread)
+            thread_id = new_thread.id
+        
+        # Get conversation history
+        recent_messages = db.query(ChatHistory).filter(
+            ChatHistory.thread_id == thread_id
+        ).order_by(ChatHistory.created_at.desc()).limit(5).all()
+        
+        history = []
+        for msg in reversed(recent_messages):
+            history.append({"role": "user", "content": msg.message})
+            history.append({"role": "assistant", "content": msg.response})
+        
+        # Route to appropriate agent
+        selected_model = request.model or "gemini"
+        
+        if selected_model == "mcp-style":
+            mcp_response = run_mcp_agent(request.message)
+            response_text = mcp_response
+            model_used = "MCP Style Agent"
+        elif selected_model == "agent" or request.use_agent:
+            response_text = run_basic_agent(request.message)
+            model_used = "Gemini Agent"
+        else:
+            chat_service = get_chat_service()
+            from app.services.rag_service import get_rag_service
+            rag_service = get_rag_service()
+            use_rag = rag_service.should_use_rag(current_user.id, thread_id)
+            
+            result = await chat_service.get_chat_response(
+                user_message=request.message,
+                conversation_history=history,
+                user_id=current_user.id,
+                thread_id=thread_id,
+                use_rag=use_rag
+            )
+            response_text = result["message"]
+            model_used = result.get("model", "gemini-2.5-flash-lite")
+        
+        # Save to database
+        chat_record = ChatHistory(
+            user_id=current_user.id,
+            thread_id=thread_id,
+            message=request.message,
+            response=response_text,
+            model=model_used,
+            session_id=request.session_id
+        )
+        db.add(chat_record)
+        db.commit()
+        
+        logger.info(f"[N8N] Chat history saved for user {current_user.email} in thread {thread_id}")
+        
+        # Return simple response for n8n
+        return {
+            "response": response_text,
+            "model": model_used,
+            "thread_id": thread_id,
+            "user_id": current_user.id
+        }
+        
+    except Exception as e:
+        logger.error(f"[N8N] Error in agent_chat: {str(e)}")
+        # Return error as JSON (n8n can handle this)
+        return {
+            "response": "I encountered an error processing your request. Please try again.",
+            "error": str(e),
+            "model": "error",
+            "thread_id": request.thread_id
+        }
+
+
     limit: int = 50,
     session_id: str = None
 ):
