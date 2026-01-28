@@ -58,6 +58,11 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
   }, [token, refreshTrigger]);
 
   const handleNewChat = () => {
+    // Navigate to main chat page first if on a different page
+    if (onNavigate) {
+      onNavigate('/');
+    }
+    // Then reset to new chat
     onSelectThread(null);
   };
 

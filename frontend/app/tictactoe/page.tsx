@@ -39,6 +39,8 @@ export default function TicTacToePage() {
     
     try {
       const token = localStorage.getItem('token');
+      console.log('Starting new game with token:', token ? 'present' : 'missing');
+      
       const response = await fetch('http://localhost:8001/api/tictactoe/new', {
         method: 'POST',
         headers: {
@@ -47,15 +49,21 @@ export default function TicTacToePage() {
         },
       });
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to start new game');
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to start new game: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Game state received:', data);
       setGameState(data);
     } catch (err: any) {
+      console.error('Error in startNewGame:', err);
       setError(err.message);
-      if (err.message.includes('401')) {
+      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
         router.push('/login');
       }
     } finally {

@@ -191,16 +191,18 @@ export default function Home() {
 
   const handleSelectThread = (threadId: number | null) => {
     if (threadId === null) {
-      // New chat
+      // New chat - reset to chat view
       setMessages([]);
       setCurrentThreadId(null);
       setMessageHistory([]);
       setHistoryIndex(-1);
+      setActiveFeature('chat');
     } else {
-      // Load existing thread
+      // Load existing thread - also go to chat view
       loadThreadMessages(threadId);
       setMessageHistory([]);
       setHistoryIndex(-1);
+      setActiveFeature('chat');
     }
   };
 
