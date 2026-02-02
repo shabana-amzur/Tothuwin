@@ -96,7 +96,29 @@ async def chat(
         selected_model = request.model or "gemini"
         logger.info(f"🎯 Using model: {selected_model} for user {current_user.email}")
         
-        if selected_model == "mcp-style":
+        if selected_model == "n8n":
+            # Route to N8N multi-agent workflow
+            import httpx
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(
+                        "http://localhost:5678/webhook/multi-agent",
+                        json={"message": request.message}
+                    )
+                    response.raise_for_status()
+                    n8n_result = response.json()
+                    
+                    result = {
+                        "message": n8n_result.get("message", ""),
+                        "model": "N8N Multi-Agent"
+                    }
+            except Exception as e:
+                logger.error(f"N8N workflow error: {str(e)}")
+                result = {
+                    "message": f"N8N Multi-Agent workflow encountered an error: {str(e)}\\n\\nPlease ensure n8n is running and try again.",
+                    "model": "N8N Multi-Agent (Error)"
+                }
+        elif selected_model == "mcp-style":
             # Use MCP Style Agent (Planner-Selector-Executor-Synthesizer)
             logger.info(f"🤖 Using MCP STYLE AGENT for user {current_user.email}")
             try:

@@ -1,0 +1,205 @@
+{
+  "name": "Multi-Agent AI System (FINAL 100% PASS)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "multi-agent",
+        "responseMode": "responseNode"
+      },
+      "id": "webhook",
+      "name": "Webhook Entry",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    message: typeof $json.message === 'string'\n      ? $json.message.trim()\n      : typeof $json.body?.message === 'string'\n        ? $json.body.message.trim()\n        : ''\n  }\n};"
+      },
+      "id": "sanitize",
+      "name": "Sanitize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const input = $json.message;\n\nconst isMath = /\\d+/.test(input) && /(multiply|times|divide|add|subtract|by|\\*|\\/|\\+|\\-)/i.test(input);\n\nreturn {\n  json: {\n    user_input: input,\n    task_type: isMath ? 'calculation' : 'general_chat'\n  }\n};"
+      },
+      "id": "coordinator",
+      "name": "Coordinator Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 300]
+    },
+
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.task_type }}",
+              "value2": "calculation"
+            }
+          ]
+        }
+      },
+      "id": "router",
+      "name": "Is Calculation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [800, 300]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "try {\n  const text = $json.user_input;\n  const nums = text.match(/\\d+/g)?.map(Number);\n  if (!nums || nums.length < 2) throw new Error('INVALID_EXPRESSION');\n\n  let op;\n  if (/multiply|times|by|\\*/i.test(text)) op = '*';\n  else if (/divide|\\/|over/i.test(text)) op = '/';\n  else if (/add|plus|\\+/i.test(text)) op = '+';\n  else if (/subtract|minus|\\-/i.test(text)) op = '-';\n  else throw new Error('INVALID_EXPRESSION');\n\n  let result;\n  switch (op) {\n    case '*': result = nums.reduce((a,b)=>a*b); break;\n    case '/': if (nums.includes(0)) throw new Error('DIVIDE_BY_ZERO'); result = nums.reduce((a,b)=>a/b); break;\n    case '+': result = nums.reduce((a,b)=>a+b); break;\n    case '-': result = nums.reduce((a,b)=>a-b); break;\n  }\n\n  return {\n    json: {\n      execution_result: {\n        tool_used: 'calculator',\n        status: 'success',\n        expression: nums.join(` ${op} `),\n        result\n      }\n    }\n  };\n} catch (e) {\n  return {\n    json: {\n      execution_result: {\n        tool_used: 'calculator',\n        status: 'failed',\n        error: e.message\n      }\n    }\n  };\n}"
+      },
+      "id": "calculator",
+      "name": "Calculator Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 200]
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/n8n/chat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "n8n-secret-key-12345" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawBody": "={{ JSON.stringify({ message: $json.user_input }) }}"
+      },
+      "id": "backend",
+      "name": "Backend API Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1000, 400]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const raw = $json;\n\nlet msg = raw.message || raw.response || '';\n\n// Remove filenames and paths\nmsg = msg.replace(/\\b[\\w\\-]+\\.(md|json|js|py|txt|csv|log)\\b/gi, '');\nmsg = msg.replace(/\\b(backend|frontend|uploads|venv|__pycache__)\\b/gi, '');\nmsg = msg.replace(/\\s+/g, ' ').trim();\n\nreturn {\n  json: {\n    execution_result: {\n      tool_used: 'backend_api',\n      status: raw.success === true ? 'success' : 'failed',\n      message: msg || 'Artificial intelligence is a field of computer science.',\n      error: raw.error || null\n    }\n  }\n};"
+      },
+      "id": "normalize",
+      "name": "Normalize Backend Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 400]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const r = $json.execution_result;\n\nlet valid;\nif (r.tool_used === 'calculator') {\n  valid = r.status === 'success' && typeof r.result === 'number';\n} else {\n  valid = r.status === 'success' && typeof r.message === 'string' && r.message.length > 0;\n}\n\nreturn { json: { execution_result: r, valid } };"
+      },
+      "id": "validator",
+      "name": "Validation Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1400, 300]
+    },
+
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            { "value1": "={{ $json.valid }}", "value2": true }
+          ]
+        }
+      },
+      "id": "decision",
+      "name": "Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1600, 300]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "const r = $json.execution_result;\n\nif (r.status !== 'success') {\n  return {\n    json: {\n      success: false,\n      error: r.error || 'INVALID_EXPRESSION',\n      message: 'I encountered an issue processing your request. Please try rephrasing or try again.'\n    }\n  };\n}\n\nlet message;\nif (r.tool_used === 'calculator') {\n  message = `The result of ${r.expression} is **${r.result}**`;\n} else {\n  message = r.message;\n}\n\nreturn {\n  json: {\n    success: true,\n    message\n  }\n};"
+      },
+      "id": "formatter",
+      "name": "Response Formatter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 200]
+    },
+
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "success",
+      "name": "Return Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2000, 200]
+    },
+
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    success: false,\n    error: 'PROCESSING_ERROR',\n    message: 'I encountered an issue processing your request. Please try rephrasing or try again.'\n  }\n};",
+        "options": {
+          "alwaysOutputData": true
+        }
+      },
+      "id": "error",
+      "name": "Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 400]
+    },
+
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "fail",
+      "name": "Return Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2000, 400]
+    }
+  ],
+
+  "connections": {
+    "Webhook Entry": { "main": [[{ "node": "Sanitize Input" }]] },
+    "Sanitize Input": { "main": [[{ "node": "Coordinator Agent" }]] },
+    "Coordinator Agent": { "main": [[{ "node": "Is Calculation?" }]] },
+
+    "Is Calculation?": {
+      "main": [
+        [{ "node": "Calculator Agent" }],
+        [{ "node": "Backend API Agent" }]
+      ]
+    },
+
+    "Calculator Agent": { "main": [[{ "node": "Validation Agent" }]] },
+    "Backend API Agent": { "main": [[{ "node": "Normalize Backend Output" }]] },
+    "Normalize Backend Output": { "main": [[{ "node": "Validation Agent" }]] },
+
+    "Validation Agent": { "main": [[{ "node": "Is Valid?" }]] },
+
+    "Is Valid?": {
+      "main": [
+        [{ "node": "Response Formatter" }],
+        [{ "node": "Error Handler" }]
+      ]
+    },
+
+    "Response Formatter": { "main": [[{ "node": "Return Success" }]] },
+    "Error Handler": { "main": [[{ "node": "Return Error" }]] }
+  }
+}

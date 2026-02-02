@@ -11,6 +11,7 @@ import logging
 
 from ..config import get_settings
 from .image_service import get_image_service
+from .web_search_service import get_web_search_service
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -59,6 +60,45 @@ class ChatService:
         
         return messages
     
+    def _needs_web_search(self, user_message: str) -> bool:
+        """
+        Detect if the user's query requires real-time web information
+        
+        Args:
+            user_message: The user's input message
+            
+        Returns:
+            True if web search is needed
+        """
+        search_keywords = [
+            # News related
+            'breaking news', 'latest news', 'current news', 'today news',
+            'recent news', 'news about', 'what happened', 'headlines',
+            
+            # Time-sensitive phrases
+            'current', 'latest', 'recent', 'today', 'now', 'this week',
+            'this month', 'this year', 'right now', 'at the moment',
+            
+            # Events and happenings
+            'events', 'happening', 'going on', 'taking place', 'scheduled',
+            'upcoming', 'public events',
+            
+            # Real-time data
+            'weather', 'temperature', 'forecast',
+            'stock price', 'share price', 'market price', 'trading',
+            'price today', 'price now', 'cost today',
+            'live', 'real-time', 'live score', 'match score',
+            
+            # Sports and entertainment
+            'score', 'match', 'game result', 'tournament', 'championship',
+            
+            # General current info
+            'what are', 'what is happening', 'status of', 'update on'
+        ]
+        
+        message_lower = user_message.lower()
+        return any(keyword in message_lower for keyword in search_keywords)
+    
     async def get_chat_response(
         self,
         user_message: str,
@@ -88,6 +128,24 @@ class ChatService:
                 result = await image_service.generate_image(user_message, user_id)
                 return result
             
+            # Check if web search is needed for real-time information
+            web_search_context = ""
+            used_web_search = False
+            if self._needs_web_search(user_message):
+                logger.info("Real-time information request detected, performing web search")
+                web_search_service = get_web_search_service()
+                
+                # Determine if it's a news query
+                if any(word in user_message.lower() for word in ['news', 'breaking', 'latest']):
+                    search_results = web_search_service.get_news(user_message, max_results=5)
+                else:
+                    search_results = web_search_service.search(user_message, max_results=5)
+                
+                if search_results:
+                    web_search_context = web_search_service.format_search_results(search_results)
+                    used_web_search = True
+                    logger.info(f"Found {len(search_results)} web results")
+            
             # Build message list
             messages = []
             
@@ -114,8 +172,17 @@ class ChatService:
                 "Format your responses using markdown when appropriate."
             )
             
+            # If web search results are available, add them to the context
+            if web_search_context:
+                system_prompt += (
+                    "\n\n**CURRENT WEB SEARCH RESULTS:**\n" + 
+                    web_search_context +
+                    "\n\nIMPORTANT: Use the above search results to provide up-to-date, accurate information. "
+                    "Summarize the key points and cite sources when relevant."
+                )
+            
             # If RAG context is available, add it to system prompt with strict grounding instructions
-            if rag_context:
+            elif rag_context:
                 system_prompt += (
                     "\n\n" + rag_context + 
                     "\n\nIMPORTANT INSTRUCTIONS:\n"
@@ -147,7 +214,8 @@ class ChatService:
                 "message": response.content,
                 "model": settings.GEMINI_MODEL,
                 "timestamp": datetime.now().isoformat(),
-                "used_rag": documents_found
+                "used_rag": documents_found,
+                "used_web_search": used_web_search
             }
             
         except Exception as e:

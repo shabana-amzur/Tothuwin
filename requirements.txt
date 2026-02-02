@@ -28,6 +28,9 @@ langchain-experimental==0.3.3  # For pandas agent
 
 # Document Processing & RAG
 chromadb==0.5.23  # Vector database
+
+# Web Search
+duckduckgo-search==6.3.5  # Free web search without API key
 pypdf==5.1.0  # PDF processing
 python-docx==1.1.2  # DOCX processing
 python-magic==0.4.27  # File type detection

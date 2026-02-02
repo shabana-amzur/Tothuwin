@@ -62,7 +62,7 @@ export default function Home() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   
   // Model selection state
-  const [selectedModel, setSelectedModel] = useState<'gemini' | 'agent' | 'mcp-style'>('gemini');
+  const [selectedModel, setSelectedModel] = useState<'gemini' | 'agent' | 'mcp-style' | 'n8n'>('gemini');
   const [showModelSelector, setShowModelSelector] = useState(false);
   const modelSelectorRef = useRef<HTMLDivElement>(null);
   
@@ -301,7 +301,8 @@ export default function Home() {
         return;
       }
       
-      // Regular chat
+      // Regular chat - Always route to backend chat API
+      // Backend handles routing based on selected model
       const response = await fetch('http://localhost:8001/api/chat', {
         method: 'POST',
         headers: {
@@ -327,6 +328,7 @@ export default function Home() {
 
       const data = await response.json();
       
+      // Backend always returns data.message
       const assistantMessage: Message = {
         role: 'assistant',
         content: data.message,
@@ -935,6 +937,7 @@ export default function Home() {
                   {selectedModel === 'gemini' && '💬 Gemini'}
                   {selectedModel === 'agent' && '🤖 Agent'}
                   {selectedModel === 'mcp-style' && '🎯 MCP Style'}
+                  {selectedModel === 'n8n' && '🔄 N8N Multi-Agent'}
                 </span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -998,6 +1001,25 @@ export default function Home() {
                           <div className="text-sm font-medium text-white">MCP Style Agent</div>
                           <div className="text-xs text-gray-400">Planner-Selector-Executor-Synthesizer pattern</div>
                           <div className="text-xs text-purple-400 mt-1">→ Calculator, Text Analyzer, Search</div>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setSelectedModel('n8n');
+                        setShowModelSelector(false);
+                      }}
+                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors ${
+                        selectedModel === 'n8n' ? 'bg-gray-700 border-l-2 border-orange-500' : ''
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <span className="text-xl">🔄</span>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-white">N8N Multi-Agent</div>
+                          <div className="text-xs text-gray-400">N8N workflow with coordinator, calculator & backend agents</div>
+                          <div className="text-xs text-orange-400 mt-1">→ Validated multi-agent pipeline</div>
                         </div>
                       </div>
                     </button>

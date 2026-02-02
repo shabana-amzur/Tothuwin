@@ -1,0 +1,285 @@
+{
+  "name": "Multi-Agent AI System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "multi-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-entry",
+      "name": "Webhook Entry Point",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "multi-agent-webhook"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "request_id",
+              "value": "={{ $now.format('yyyyMMddHHmmss') }}-{{ $workflow.id }}"
+            },
+            {
+              "name": "user_input",
+              "value": "={{ $json.message || $json.body.message }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "name": "workflow_state",
+              "value": "started"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "init-context",
+      "name": "Initialize Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// COORDINATOR AGENT\n// Analyzes user request and determines task type\n\nconst userInput = $input.item.json.user_input;\nconst requestId = $input.item.json.request_id;\n\n// Task classification logic\nfunction classifyTask(input) {\n  const lowerInput = input.toLowerCase();\n  \n  // Calculation patterns\n  const mathPatterns = [\n    /calculate|compute|what is \\d+|multiply|divide|add|subtract/i,\n    /\\d+\\s*[\\+\\-\\*\\/]\\s*\\d+/\n  ];\n  \n  // API call patterns\n  const apiPatterns = [\n    /get|fetch|retrieve|api|data from/i,\n    /weather|stock|price|news/i\n  ];\n  \n  // Database patterns\n  const dbPatterns = [\n    /search|find|query|lookup|database|records/i\n  ];\n  \n  // Support/Help patterns\n  const supportPatterns = [\n    /help|error|issue|problem|failed|support|assist/i\n  ];\n  \n  // Check patterns\n  if (mathPatterns.some(pattern => pattern.test(input))) {\n    return {\n      type: 'calculation',\n      confidence: 0.95,\n      tools: ['calculator'],\n      complexity: 'low'\n    };\n  }\n  \n  if (apiPatterns.some(pattern => pattern.test(input))) {\n    return {\n      type: 'api_call',\n      confidence: 0.85,\n      tools: ['http_request', 'backend_api'],\n      complexity: 'medium'\n    };\n  }\n  \n  if (dbPatterns.some(pattern => pattern.test(input))) {\n    return {\n      type: 'data_query',\n      confidence: 0.80,\n      tools: ['database'],\n      complexity: 'medium'\n    };\n  }\n  \n  if (supportPatterns.some(pattern => pattern.test(input))) {\n    return {\n      type: 'support',\n      confidence: 0.90,\n      tools: ['backend_api', 'mcp_agent'],\n      complexity: 'high'\n    };\n  }\n  \n  // Default to general chat\n  return {\n    type: 'general_chat',\n    confidence: 0.70,\n    tools: ['backend_api'],\n    complexity: 'low'\n  };\n}\n\n// Extract any numbers for calculations\nfunction extractNumbers(input) {\n  const numbers = input.match(/\\d+\\.?\\d*/g);\n  return numbers ? numbers.map(Number) : [];\n}\n\n// Extract operators\nfunction extractOperator(input) {\n  if (input.includes('*') || /multiply|times/i.test(input)) return '*';\n  if (input.includes('/') || /divide/i.test(input)) return '/';\n  if (input.includes('+') || /add|plus/i.test(input)) return '+';\n  if (input.includes('-') || /subtract|minus/i.test(input)) return '-';\n  return null;\n}\n\n// Classify the task\nconst classification = classifyTask(userInput);\nconst numbers = extractNumbers(userInput);\nconst operator = extractOperator(userInput);\n\n// Create execution plan\nconst executionPlan = [];\n\nif (classification.type === 'calculation' && numbers.length >= 2) {\n  executionPlan.push({\n    step: 1,\n    action: 'calculate',\n    tool: 'calculator',\n    input: { numbers, operator }\n  });\n  executionPlan.push({\n    step: 2,\n    action: 'format_result',\n    tool: 'formatter'\n  });\n} else if (classification.type === 'support') {\n  executionPlan.push({\n    step: 1,\n    action: 'call_mcp_agent',\n    tool: 'backend_api',\n    input: { model: 'mcp-style' }\n  });\n} else {\n  executionPlan.push({\n    step: 1,\n    action: 'call_gemini',\n    tool: 'backend_api',\n    input: { model: 'gemini' }\n  });\n}\n\n// Output coordinator decision\nreturn {\n  json: {\n    request_id: requestId,\n    user_input: userInput,\n    coordinator_decision: {\n      task_type: classification.type,\n      confidence: classification.confidence,\n      tools_required: classification.tools,\n      complexity: classification.complexity,\n      reasoning: `Classified as ${classification.type} based on input pattern analysis`,\n      execution_plan: executionPlan,\n      extracted_data: {\n        numbers: numbers,\n        operator: operator\n      }\n    },\n    workflow_state: 'coordinated',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "coordinator-agent",
+      "name": "🧠 Coordinator Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.coordinator_decision.task_type }}",
+              "value2": "calculation"
+            }
+          ]
+        }
+      },
+      "id": "route-calculation",
+      "name": "Is Calculation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// EXECUTION AGENT - CALCULATOR TOOL\n// Performs mathematical calculations\n\nconst data = $input.item.json;\nconst numbers = data.coordinator_decision.extracted_data.numbers;\nconst operator = data.coordinator_decision.extracted_data.operator;\n\nfunction calculateExpression(nums, op) {\n  try {\n    if (nums.length < 2) {\n      throw new Error('Not enough numbers for calculation');\n    }\n    \n    let result;\n    switch(op) {\n      case '+':\n        result = nums.reduce((a, b) => a + b, 0);\n        break;\n      case '-':\n        result = nums.reduce((a, b) => a - b);\n        break;\n      case '*':\n        result = nums.reduce((a, b) => a * b, 1);\n        break;\n      case '/':\n        result = nums.reduce((a, b) => a / b);\n        if (!isFinite(result)) {\n          throw new Error('Division by zero');\n        }\n        break;\n      default:\n        // Try basic expression\n        result = nums[0] + nums[1];\n    }\n    \n    return {\n      success: true,\n      result: result,\n      expression: `${nums.join(` ${op} `)}`,\n      tool: 'calculator'\n    };\n  } catch (error) {\n    return {\n      success: false,\n      error: error.message,\n      tool: 'calculator'\n    };\n  }\n}\n\nconst calculation = calculateExpression(numbers, operator);\n\nreturn {\n  json: {\n    ...data,\n    execution_result: {\n      status: calculation.success ? 'success' : 'failed',\n      tool_used: 'calculator',\n      result: calculation.result,\n      expression: calculation.expression,\n      error: calculation.error || null,\n      execution_time_ms: Date.now() - new Date(data.timestamp).getTime(),\n      intermediate_steps: [\n        { step: 1, action: 'parse_numbers', result: numbers },\n        { step: 2, action: 'identify_operator', result: operator },\n        { step: 3, action: 'calculate', result: calculation.result }\n      ]\n    },\n    workflow_state: 'executed',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "execution-calculator",
+      "name": "⚡ Execution Agent (Calculator)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8001/api/n8n/chat",
+        "authentication": "none",
+        "sendQuery": false,
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "n8n-secret-key-12345"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawBody": "={{ JSON.stringify({ message: $json.user_input, model: 'gemini', user_email: 'n8n-multi-agent@system.local' }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "execution-backend-api",
+      "name": "⚡ Execution Agent (Backend API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transform Backend Response\n// Restructures backend API response to match validation agent expectations\n\nconst backendResponse = $json;\nconst previousNodeData = $('🧠 Coordinator Agent').item.json;\n\nreturn {\n  json: {\n    ...previousNodeData,\n    execution_result: {\n      ...backendResponse,\n      tool_used: 'backend_api'\n    },\n    workflow_state: 'executed',\n    timestamp: new Date().toISOString()\n  }\n};",
+        "options": {
+          "continueOnFail": false
+        }
+      },
+      "id": "transform-backend-response",
+      "name": "Transform Backend Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1150, 500],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// VALIDATION AGENT\n// Verifies output quality and correctness\n\nconst data = $input.item.json;\nconst executionResult = data.execution_result || data.response || data.body;\n\nfunction validateCalculation(result) {\n  const checks = {\n    completeness: result.result !== undefined && result.result !== null,\n    correctness: typeof result.result === 'number' && isFinite(result.result),\n    format: result.hasOwnProperty('expression'),\n    no_errors: result.status === 'success'\n  };\n  \n  const passedChecks = Object.values(checks).filter(v => v).length;\n  const totalChecks = Object.keys(checks).length;\n  const score = passedChecks / totalChecks;\n  \n  return {\n    is_valid: score >= 0.75,\n    confidence_score: score,\n    checks: checks,\n    issues: Object.entries(checks)\n      .filter(([key, value]) => !value)\n      .map(([key]) => key)\n  };\n}\n\nfunction validateAPIResponse(result) {\n  const checks = {\n    completeness: result.response !== undefined && result.response !== null,\n    correctness: result.status === 'success' || result.message,\n    format: typeof result.response === 'string' || typeof result.message === 'string',\n    no_errors: !result.error\n  };\n  \n  const passedChecks = Object.values(checks).filter(v => v).length;\n  const totalChecks = Object.keys(checks).length;\n  const score = passedChecks / totalChecks;\n  \n  return {\n    is_valid: score >= 0.75,\n    confidence_score: score,\n    checks: checks,\n    issues: Object.entries(checks)\n      .filter(([key, value]) => !value)\n      .map(([key]) => key)\n  };\n}\n\n// Determine validation type based on execution result\nlet validation;\nif (executionResult.tool_used === 'calculator') {\n  validation = validateCalculation(executionResult);\n} else {\n  validation = validateAPIResponse(executionResult);\n}\n\n// Add recommendation\nvalidation.recommendation = validation.is_valid ? 'approve' : \n                           validation.confidence_score >= 0.5 ? 'retry' : 'reject';\n\nreturn {\n  json: {\n    ...data,\n    validation_result: {\n      ...validation,\n      validated_at: new Date().toISOString(),\n      validator: 'validation_agent'\n    },\n    workflow_state: 'validated',\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "validation-agent",
+      "name": "✅ Validation Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.validation_result.is_valid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-validation",
+      "name": "Is Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {\n        "jsCode": "// RESPONSE FORMATTER - CLEAN JSON OUTPUT ONLY\n// NO file names, NO execution data, NO tool logs\n\nconst data = $input.item.json;\nconst coordinator = data.coordinator_decision;\nconst execution = data.execution_result || {};\n\n// Format message based on task type\nlet message;\nif (coordinator.task_type === 'calculation') {\n  const expr = execution.expression || 'calculation';\n  const result = execution.result;\n  message = `The result of ${expr} is **${result}**`;\n} else {\n  // For API responses, extract clean message\n  message = execution.response || execution.message || 'Response received';\n}\n\n// Return ONLY success and message - nothing else\nreturn {\n  json: {\n    success: true,\n    message: message\n  }\n};"
+      },
+      "id": "format-response",
+      "name": "📝 Response Formatter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "webhook-response-success",
+      "name": "Return Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1850, 200]
+    },
+    {
+      "parameters": {
+      "parameters": {\n        "jsCode": "// ERROR HANDLER - CLEAN JSON OUTPUT ONLY\n\nreturn {\n  json: {\n    success: false,\n    message: \"I encountered an issue processing your request. Please try rephrasing or try again.\"\n  }\n};"
+      },
+      "id": "error-handler",
+      "name": "🚨 Error Handler",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "webhook-response-error",
+      "name": "Return Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1850, 400]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "log_type",
+              "value": "workflow_execution"
+            },
+            {
+              "name": "request_id",
+              "value": "={{ $json.request_id }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.success ? 'success' : 'failed' }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "logger",
+      "name": "📊 Logger",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [1850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Entry Point": {
+      "main": [[{ "node": "Initialize Context", "type": "main", "index": 0 }]]
+    },
+    "Initialize Context": {
+      "main": [[{ "node": "🧠 Coordinator Agent", "type": "main", "index": 0 }]]
+    },
+    "🧠 Coordinator Agent": {
+      "main": [[{ "node": "Is Calculation?", "type": "main", "index": 0 }]]
+    },
+    "Is Calculation?": {
+      "main": [
+        [{ "node": "⚡ Execution Agent (Calculator)", "type": "main", "index": 0 }],
+        [{ "node": "⚡ Execution Agent (Backend API)", "type": "main", "index": 0 }]
+      ]
+    },
+    "⚡ Execution Agent (Calculator)": {
+      "main": [[{ "node": "✅ Validation Agent", "type": "main", "index": 0 }]]
+    },
+    "⚡ Execution Agent (Backend API)": {
+      "main": [[{ "node": "Transform Backend Response", "type": "main", "index": 0 }]]
+    },
+    "Transform Backend Response": {
+      "main": [[{ "node": "✅ Validation Agent", "type": "main", "index": 0 }]]
+    },
+    "✅ Validation Agent": {
+      "main": [[{ "node": "Is Valid?", "type": "main", "index": 0 }]]
+    },
+    "Is Valid?": {
+      "main": [
+        [{ "node": "📝 Response Formatter", "type": "main", "index": 0 }],
+        [{ "node": "🚨 Error Handler", "type": "main", "index": 0 }]
+      ]
+    },
+    "📝 Response Formatter": {
+      "main": [[{ "node": "Return Success", "type": "main", "index": 0 }]]
+    },
+    "🚨 Error Handler": {
+      "main": [[{ "node": "Return Error", "type": "main", "index": 0 }]]
+    },
+    "Return Success": {
+      "main": [[{ "node": "📊 Logger", "type": "main", "index": 0 }]]
+    },
+    "Return Error": {
+      "main": [[{ "node": "📊 Logger", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-02-01T00:00:00.000Z",
+  "versionId": "1"
+}
