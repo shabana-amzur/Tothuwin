@@ -99,12 +99,12 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
   };
 
   return (
-    <div className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col h-screen">
+    <div className="w-64 bg-gray-100 dark:bg-gray-900 border-r border-gray-300 dark:border-gray-800 flex flex-col h-screen">
       {/* Sticky Header with Feature Buttons */}
-      <div className="sticky top-0 z-10 bg-gray-900 p-4 border-b border-gray-800 space-y-2">
+      <div className="sticky top-0 z-10 bg-gray-100 dark:bg-gray-900 p-4 border-b border-gray-300 dark:border-gray-800 space-y-2">
         <button
           onClick={handleNewChat}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+          className="w-full bg-[#ec6438] hover:bg-[#d65430] text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
         >
           <span>✏️</span>
           <span>New Chat</span>
@@ -113,7 +113,7 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
         {/* Feature Buttons */}
         <button
           onClick={() => onFeatureSelect?.('sql')}
-          className="w-full bg-purple-600/80 hover:bg-purple-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-start gap-2"
+          className="w-full bg-[#5c7c8c]/80 hover:bg-[#5c7c8c] text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-start gap-2"
         >
           <span>📊</span>
           <span>SQL Query</span>
@@ -150,7 +150,7 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
           {/* Accordion Header */}
           <button
             onClick={() => setIsChatsOpen(!isChatsOpen)}
-            className="w-full flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 hover:text-gray-300 transition-colors"
+            className="w-full flex items-center justify-between text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3 hover:text-gray-900 dark:hover:text-gray-300 transition-colors"
           >
             <span>Your chats</span>
             <svg
@@ -167,19 +167,19 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
           {isChatsOpen && (
             <>
         {loading && (
-          <div className="text-gray-400 text-center py-8">
+          <div className="text-gray-600 dark:text-gray-400 text-center py-8">
             Loading threads...
           </div>
         )}
 
         {error && (
-          <div className="text-red-400 text-center py-8">
+          <div className="text-red-600 dark:text-red-400 text-center py-8">
             {error}
           </div>
         )}
 
         {!loading && !error && threads.length === 0 && (
-          <div className="text-gray-400 text-center py-8">
+          <div className="text-gray-600 dark:text-gray-400 text-center py-8">
             No threads yet. Start a new chat!
           </div>
         )}
@@ -191,23 +191,23 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
             className={`
               mb-2 p-3 rounded-lg cursor-pointer transition-colors group
               ${currentThreadId === thread.id 
-                ? 'bg-gray-800 border border-gray-700' 
-                : 'hover:bg-gray-800/50'
+                ? 'bg-gray-200 dark:bg-gray-800 border border-gray-400 dark:border-gray-700' 
+                : 'hover:bg-gray-200/50 dark:hover:bg-gray-800/50'
               }
             `}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <h3 className="text-white text-sm font-medium truncate">
+                <h3 className="text-gray-900 dark:text-white text-sm font-medium truncate">
                   {thread.title}
                 </h3>
-                <p className="text-gray-500 text-xs mt-1">
+                <p className="text-gray-600 dark:text-gray-500 text-xs mt-1">
                   {thread.message_count} messages
                 </p>
               </div>
               <button
                 onClick={(e) => handleDeleteThread(thread.id, e)}
-                className="ml-2 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="ml-2 text-gray-500 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                 title="Delete thread"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,14 +223,14 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
       </div>
 
       {/* Sticky User Info Footer */}
-      <div className="sticky bottom-0 bg-gray-900 p-4 border-t border-gray-800">
+      <div className="sticky bottom-0 bg-gray-100 dark:bg-gray-900 p-4 border-t border-gray-300 dark:border-gray-800">
         <button
           onClick={() => {
             if (confirm('Are you sure you want to log out?')) {
               window.location.href = '/login';
             }
           }}
-          className="w-full text-gray-400 hover:text-white text-sm transition-colors"
+          className="w-full text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
         >
           Logout
         </button>

@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from './contexts/AuthContext';
+import { useTheme } from './contexts/ThemeContext';
 import ThreadSidebar from './components/ThreadSidebar';
 import MarkdownRenderer from './components/MarkdownRenderer';
 import dynamic from 'next/dynamic';
@@ -28,6 +30,7 @@ interface ThreadSidebarProps {
 
 export default function Home() {
   const { user, token, logout, isLoading: authLoading, loginWithToken } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -710,14 +713,14 @@ export default function Home() {
 
   if (authLoading || !user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-900">
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-900 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Thread Sidebar */}
       <ThreadSidebar 
         onSelectThread={handleSelectThread}
@@ -731,18 +734,27 @@ export default function Home() {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Header */}
-        <header className="bg-gray-800 border-b border-gray-700 px-6 py-4 shadow-sm flex justify-between items-center flex-shrink-0">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 shadow-sm flex justify-between items-center flex-shrink-0">
           <div className="flex items-center gap-4">
+            {activeFeature === 'chat' && (
+              <Image 
+                src="/parrot.png" 
+                alt="Tothu" 
+                width={40} 
+                height={40}
+                className="rounded-full"
+              />
+            )}
             <div>
-              <h1 className="text-xl font-bold text-white">
-                {activeFeature === 'chat' && 'AI Chat Assistant'}
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                {activeFeature === 'chat' && 'Tothu'}
                 {activeFeature === 'sql' && '📊 SQL Query'}
                 {activeFeature === 'excel' && '📈 Excel Analysis'}
                 {activeFeature === 'game' && '🎮 Tic-Tac-Toe'}
                 {activeFeature === 'image' && '🖼️ Image Validation'}
               </h1>
-              <p className="text-sm text-gray-400">
-                {activeFeature === 'chat' && 'Powered by Google Gemini'}
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {activeFeature === 'chat' && 'Your AI Assistant - Powered by Google Gemini'}
                 {activeFeature === 'sql' && 'Natural Language to SQL'}
                 {activeFeature === 'excel' && 'AI-Powered Data Analysis'}
                 {activeFeature === 'game' && 'Play against AI'}
@@ -752,19 +764,36 @@ export default function Home() {
             {activeFeature !== 'chat' && (
               <button
                 onClick={() => setActiveFeature('chat')}
-                className="text-sm bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+                className="text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg transition-colors"
               >
                 ← Back to Chat
               </button>
             )}
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-300">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? (
+                <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
+            
+            <span className="text-sm text-gray-700 dark:text-gray-300">
               {user.full_name || user.username}
             </span>
             <button 
               onClick={logout}
-              className="text-sm text-red-400 hover:text-red-300 font-medium transition-colors"
+              className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors"
             >
               Logout
             </button>
@@ -778,12 +807,12 @@ export default function Home() {
         <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 scroll-smooth">
           <div className="max-w-4xl mx-auto space-y-4">
             {messages.length === 0 ? (
-              <div className="text-center text-gray-400 mt-20">
-                <h2 className="text-xl font-semibold mb-2 text-white">
+              <div className="text-center text-gray-500 dark:text-gray-400 mt-20">
+                <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
                   Welcome {user.username}!
                 </h2>
                 <p>Start a conversation by typing a message below.</p>
-                <div className="mt-8 text-sm text-gray-500">
+                <div className="mt-8 text-sm text-gray-600 dark:text-gray-500">
                   <p className="mb-2">✨ Supports rich content:</p>
                   <ul className="space-y-1">
                     <li>📝 Markdown formatting</li>
@@ -806,8 +835,8 @@ export default function Home() {
                   <div
                     className={`max-w-[85%] rounded-2xl px-5 py-3 overflow-hidden break-words ${
                       message.role === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-800 text-gray-100 shadow-md border border-gray-700'
+                        ? 'bg-[#ec6438] text-white'
+                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-md border border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     <div className="flex items-start space-x-2">
@@ -851,7 +880,7 @@ export default function Home() {
             
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-800 rounded-2xl px-5 py-3 shadow-md border border-gray-700">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl px-5 py-3 shadow-md border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                     <span className="text-gray-300">Thinking...</span>
@@ -865,7 +894,7 @@ export default function Home() {
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-gray-700 bg-gray-800 px-4 py-4 shadow-lg flex-shrink-0">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-4 shadow-lg flex-shrink-0">
           <form onSubmit={sendMessage} className="max-w-4xl mx-auto">
             {/* Excel file active indicator */}
             {uploadedExcelId && excelFileName && (
@@ -895,7 +924,7 @@ export default function Home() {
             
             {/* Selected file display */}
             {selectedFile && (
-              <div className="mb-3 flex items-center justify-between bg-gray-700 rounded-lg px-4 py-2">
+              <div className="mb-3 flex items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
                 <div className="flex items-center space-x-2">
                   <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -928,7 +957,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setShowModelSelector(!showModelSelector)}
-                className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors border border-gray-600"
+                className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -946,24 +975,24 @@ export default function Home() {
               
               {/* Model dropdown */}
               {showModelSelector && (
-                <div className="absolute bottom-full mb-2 left-0 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-50 min-w-[280px]">
+                <div className="absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl z-50 min-w-[280px">
                   <div className="p-2">
-                    <div className="text-xs text-gray-400 px-3 py-2 font-semibold">Select Model</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 px-3 py-2 font-semibold">Select Model</div>
                     
                     <button
                       onClick={() => {
                         setSelectedModel('gemini');
                         setShowModelSelector(false);
                       }}
-                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors ${
-                        selectedModel === 'gemini' ? 'bg-gray-700 border-l-2 border-blue-500' : ''
+                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        selectedModel === 'gemini' ? 'bg-gray-100 dark:bg-gray-700 border-l-2 border-blue-500' : ''
                       }`}
                     >
                       <div className="flex items-start space-x-3">
                         <span className="text-xl">💬</span>
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-white">Gemini</div>
-                          <div className="text-xs text-gray-400">Standard chat model with RAG support</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">Gemini</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Standard chat model with RAG support</div>
                         </div>
                       </div>
                     </button>
@@ -973,15 +1002,15 @@ export default function Home() {
                         setSelectedModel('agent');
                         setShowModelSelector(false);
                       }}
-                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors ${
-                        selectedModel === 'agent' ? 'bg-gray-700 border-l-2 border-green-500' : ''
+                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        selectedModel === 'agent' ? 'bg-gray-100 dark:bg-gray-700 border-l-2 border-green-500' : ''
                       }`}
                     >
                       <div className="flex items-start space-x-3">
                         <span className="text-xl">🤖</span>
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-white">Agent</div>
-                          <div className="text-xs text-gray-400">ReAct pattern with tools (calculator, Wikipedia)</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">Agent</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">ReAct pattern with tools (calculator, Wikipedia)</div>
                         </div>
                       </div>
                     </button>
@@ -991,16 +1020,16 @@ export default function Home() {
                         setSelectedModel('mcp-style');
                         setShowModelSelector(false);
                       }}
-                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors ${
-                        selectedModel === 'mcp-style' ? 'bg-gray-700 border-l-2 border-purple-500' : ''
+                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        selectedModel === 'mcp-style' ? 'bg-gray-100 dark:bg-gray-700 border-l-2 border-purple-500' : ''
                       }`}
                     >
                       <div className="flex items-start space-x-3">
                         <span className="text-xl">🎯</span>
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-white">MCP Style Agent</div>
-                          <div className="text-xs text-gray-400">Planner-Selector-Executor-Synthesizer pattern</div>
-                          <div className="text-xs text-purple-400 mt-1">→ Calculator, Text Analyzer, Search</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">MCP Style Agent</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Planner-Selector-Executor-Synthesizer pattern</div>
+                          <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">→ Calculator, Text Analyzer, Search</div>
                         </div>
                       </div>
                     </button>
@@ -1010,16 +1039,16 @@ export default function Home() {
                         setSelectedModel('n8n');
                         setShowModelSelector(false);
                       }}
-                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-700 transition-colors ${
-                        selectedModel === 'n8n' ? 'bg-gray-700 border-l-2 border-orange-500' : ''
+                      className={`w-full text-left px-3 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+                        selectedModel === 'n8n' ? 'bg-gray-100 dark:bg-gray-700 border-l-2 border-orange-500' : ''
                       }`}
                     >
                       <div className="flex items-start space-x-3">
                         <span className="text-xl">🔄</span>
                         <div className="flex-1">
-                          <div className="text-sm font-medium text-white">N8N Multi-Agent</div>
-                          <div className="text-xs text-gray-400">N8N workflow with coordinator, calculator & backend agents</div>
-                          <div className="text-xs text-orange-400 mt-1">→ Validated multi-agent pipeline</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">N8N Multi-Agent</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">N8N workflow with coordinator, calculator & backend agents</div>
+                          <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">→ Validated multi-agent pipeline</div>
                         </div>
                       </div>
                     </button>
@@ -1043,7 +1072,7 @@ export default function Home() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading || isUploadingFile}
-                className="bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Upload PDF, TXT, or DOCX"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1059,7 +1088,7 @@ export default function Home() {
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message... (Supports Markdown, ↑↓ for history)"
                 disabled={isLoading}
-                className="flex-1 rounded-full border border-gray-600 bg-gray-700 text-white px-6 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-400"
+                className="flex-1 rounded-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-6 py-3 focus:outline-none focus:ring-2 focus:ring-[#ec6438] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-500 dark:placeholder-gray-400"
               />
               
               {/* Stop button - shown when loading, next to send button */}
@@ -1067,7 +1096,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={stopGeneration}
-                  className="bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-full transition-colors"
+                  className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white p-3 rounded-full transition-colors"
                   title="Stop generation"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -1080,7 +1109,7 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={isLoading || !input.trim()}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+                className="bg-[#ec6438] hover:bg-[#d65430] text-white px-8 py-3 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#ec6438]"
                 title="Send message"
               >
                 Send
