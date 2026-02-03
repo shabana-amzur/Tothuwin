@@ -1189,7 +1189,7 @@ export default function Home() {
             </div>
           </form>
         </div>
-          </>
+        </>
         ) : (
           /* Feature pages rendered directly */
           <div className="flex-1 overflow-hidden">
