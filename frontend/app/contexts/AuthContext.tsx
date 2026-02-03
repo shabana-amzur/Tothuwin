@@ -8,6 +8,9 @@ interface User {
   email: string;
   username: string;
   full_name: string;
+  profile_picture?: string;
+  is_active?: boolean;
+  created_at?: string;
   role: string;
 }
 

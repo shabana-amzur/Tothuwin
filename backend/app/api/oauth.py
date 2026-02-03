@@ -72,6 +72,7 @@ async def google_callback(
         email = user_info.get('email')
         name = user_info.get('name', email.split('@')[0])
         google_id = user_info.get('sub')
+        profile_picture = user_info.get('picture')  # Get Google profile picture
         
         if not email or not google_id:
             raise HTTPException(
@@ -100,6 +101,7 @@ async def google_callback(
                 full_name=name,  # Set full_name from Google name
                 hashed_password="",  # No password for OAuth users
                 google_id=google_id,
+                profile_picture=profile_picture,  # Set Google profile picture
                 is_active=True
             )
             db.add(user)
@@ -107,12 +109,18 @@ async def google_callback(
             db.refresh(user)
             logger.info(f"Created new Google user: {email} with username: {username}")
         else:
-            # Update Google ID if not set
+            # Update Google ID and profile picture if not set
             if not user.google_id:
                 user.google_id = google_id
                 db.commit()
                 db.refresh(user)
                 logger.info(f"Updated Google ID for user: {email}")
+            # Update profile picture from Google if available
+            if profile_picture and user.profile_picture != profile_picture:
+                user.profile_picture = profile_picture
+                db.commit()
+                db.refresh(user)
+                logger.info(f"Updated profile picture for user: {email}")
             else:
                 logger.info(f"Existing Google user logged in: {email}")
         

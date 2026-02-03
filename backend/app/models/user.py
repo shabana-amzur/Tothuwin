@@ -57,6 +57,7 @@ class UserResponse(BaseModel):
     email: str
     username: str
     full_name: str
+    profile_picture: Optional[str] = None
     is_active: bool
     role: str
     created_at: datetime

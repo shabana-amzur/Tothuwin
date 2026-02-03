@@ -855,7 +855,26 @@ function HomeContent() {
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
-              <div className="w-8 h-8 rounded-full bg-[#ec6438] flex items-center justify-center text-white font-semibold">
+              {user.profile_picture ? (
+                <img
+                  src={user.profile_picture.startsWith('http') 
+                    ? user.profile_picture 
+                    : `http://localhost:8001/${user.profile_picture}`}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover"
+                  onError={(e) => {
+                    // Fallback to avatar if image fails to load
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.nextElementSibling) {
+                      (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                    }
+                  }}
+                />
+              ) : null}
+              <div 
+                className="w-8 h-8 rounded-full bg-[#ec6438] flex items-center justify-center text-white font-semibold"
+                style={{ display: user.profile_picture ? 'none' : 'flex' }}
+              >
                 {(user.full_name || user.username).charAt(0).toUpperCase()}
               </div>
               <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
@@ -874,9 +893,32 @@ function HomeContent() {
             {/* Dropdown Menu */}
             {isUserMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{user.full_name || user.username}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
+                  {user.profile_picture ? (
+                    <img
+                      src={user.profile_picture.startsWith('http') 
+                        ? user.profile_picture 
+                        : `http://localhost:8001/${user.profile_picture}`}
+                      alt="Profile"
+                      className="w-10 h-10 rounded-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-10 h-10 rounded-full bg-[#ec6438] flex items-center justify-center text-white font-semibold text-lg"
+                    style={{ display: user.profile_picture ? 'none' : 'flex' }}
+                  >
+                    {(user.full_name || user.username).charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{user.full_name || user.username}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                  </div>
                 </div>
                 
                 <button

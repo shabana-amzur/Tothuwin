@@ -19,6 +19,7 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     hashed_password = Column(String(255), nullable=False)
     google_id = Column(String(255), unique=True, nullable=True, index=True)  # For Google OAuth
+    profile_picture = Column(String(500), nullable=True)  # URL or path to profile picture
     is_active = Column(Boolean, default=True, nullable=False)
     role = Column(String(50), default="employee", nullable=False)  # employee, admin
     created_at = Column(DateTime(timezone=True), server_default=func.now())

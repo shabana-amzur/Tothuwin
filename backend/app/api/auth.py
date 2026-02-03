@@ -3,7 +3,7 @@ Authentication API Endpoints
 Handles user registration, login, and profile management
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.database import get_db
@@ -16,6 +16,9 @@ from app.utils.auth import (
     get_current_active_user
 )
 import logging
+import os
+import shutil
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -222,6 +225,98 @@ async def change_password(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to change password"
+        )
+
+
+@router.post("/upload-profile-picture", response_model=UserResponse)
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Upload profile picture"""
+    try:
+        # Validate file type
+        allowed_types = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"]
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed"
+            )
+        
+        # Create uploads directory if it doesn't exist
+        upload_dir = Path("uploads/profile_pictures")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate unique filename
+        file_extension = file.filename.split('.')[-1]
+        filename = f"user_{current_user.id}.{file_extension}"
+        file_path = upload_dir / filename
+        
+        # Delete old profile picture if exists
+        if current_user.profile_picture:
+            old_file_path = Path(current_user.profile_picture)
+            if old_file_path.exists() and old_file_path.is_file():
+                old_file_path.unlink()
+        
+        # Save new file
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Update user profile picture path
+        current_user.profile_picture = str(file_path)
+        db.commit()
+        db.refresh(current_user)
+        
+        logger.info(f"Profile picture uploaded for user: {current_user.email}")
+        return UserResponse.model_validate(current_user)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Profile picture upload error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to upload profile picture"
+        )
+
+
+@router.delete("/delete-profile-picture", response_model=UserResponse)
+async def delete_profile_picture(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete profile picture"""
+    try:
+        if not current_user.profile_picture:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No profile picture to delete"
+            )
+        
+        # Delete file if it's a local file (not Google profile picture URL)
+        if not current_user.profile_picture.startswith('http'):
+            file_path = Path(current_user.profile_picture)
+            if file_path.exists() and file_path.is_file():
+                file_path.unlink()
+        
+        # Remove profile picture reference
+        current_user.profile_picture = None
+        db.commit()
+        db.refresh(current_user)
+        
+        logger.info(f"Profile picture deleted for user: {current_user.email}")
+        return UserResponse.model_validate(current_user)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Profile picture deletion error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete profile picture"
         )
 
 

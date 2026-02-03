@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Settings, User, Mail, Lock, Save, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Settings, User, Mail, Lock, Save, AlertCircle, CheckCircle, ArrowLeft, Camera, Trash2 } from 'lucide-react';
 
 interface UserProfile {
   id: number;
@@ -35,6 +35,10 @@ export default function SettingsPage() {
     new_password: '',
     confirm_password: '',
   });
+
+  // Profile picture upload state
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) {
@@ -139,6 +143,97 @@ export default function SettingsPage() {
     }
   };
 
+  const handleProfilePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Please select an image file');
+      setTimeout(() => setErrorMessage(''), 5000);
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('Image size should be less than 5MB');
+      setTimeout(() => setErrorMessage(''), 5000);
+      return;
+    }
+
+    setUploadingPicture(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('http://localhost:8001/api/auth/upload-profile-picture', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to upload profile picture');
+      }
+
+      setSuccessMessage('Profile picture updated successfully!');
+      setTimeout(() => {
+        setSuccessMessage('');
+        // Reload page to show new profile picture
+        window.location.reload();
+      }, 1500);
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Failed to upload profile picture');
+      setTimeout(() => setErrorMessage(''), 5000);
+    } finally {
+      setUploadingPicture(false);
+    }
+  };
+
+  const handleDeleteProfilePicture = async () => {
+    if (!confirm('Are you sure you want to delete your profile picture?')) {
+      return;
+    }
+
+    setUploadingPicture(true);
+    setSuccessMessage('');
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('http://localhost:8001/api/auth/delete-profile-picture', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to delete profile picture');
+      }
+
+      setSuccessMessage('Profile picture deleted successfully!');
+      setTimeout(() => {
+        setSuccessMessage('');
+        // Reload page to show default avatar
+        window.location.reload();
+      }, 1500);
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Failed to delete profile picture');
+      setTimeout(() => setErrorMessage(''), 5000);
+    } finally {
+      setUploadingPicture(false);
+    }
+  };
+
   if (!user) {
     return null;
   }
@@ -180,6 +275,73 @@ export default function SettingsPage() {
         )}
 
         <div className="grid gap-8">
+          {/* Profile Picture */}
+          <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Camera className="w-5 h-5 text-[#ec6438]" />
+              <h2 className="text-xl font-semibold">Profile Picture</h2>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                {user.profile_picture ? (
+                  <img
+                    src={user.profile_picture.startsWith('http') 
+                      ? user.profile_picture 
+                      : `http://localhost:8001/${user.profile_picture}`}
+                    alt="Profile"
+                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-700"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      if (e.currentTarget.nextElementSibling) {
+                        (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className="w-24 h-24 rounded-full bg-[#ec6438] flex items-center justify-center text-white font-semibold text-3xl border-2 border-gray-700"
+                  style={{ display: user.profile_picture ? 'none' : 'flex' }}
+                >
+                  {(user.full_name || user.username).charAt(0).toUpperCase()}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePictureUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingPicture}
+                  className="bg-[#ec6438] hover:bg-[#d5552f] text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Camera className="w-4 h-4" />
+                  {uploadingPicture ? 'Uploading...' : 'Upload Picture'}
+                </button>
+                
+                {user.profile_picture && (
+                  <button
+                    onClick={handleDeleteProfilePicture}
+                    disabled={uploadingPicture}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Picture
+                  </button>
+                )}
+                
+                <p className="text-xs text-gray-400">
+                  Recommended: Square image, max 5MB (JPG, PNG, GIF, WebP)
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Profile Information */}
           <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 p-6">
             <div className="flex items-center gap-3 mb-6">
