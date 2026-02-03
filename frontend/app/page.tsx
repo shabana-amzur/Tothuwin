@@ -246,10 +246,15 @@ function HomeContent() {
     
     if (!input.trim() || isLoading) return;
 
+    // Create user message with image if attached
     const userMessage: Message = {
       role: 'user',
       content: input.trim(),
       timestamp: new Date().toISOString(),
+      ...(selectedFile && selectedFile.type.startsWith('image/') && {
+        image_url: URL.createObjectURL(selectedFile),
+        is_image: true
+      })
     };
 
     // Add to message history for up/down arrow navigation
@@ -308,10 +313,19 @@ function HomeContent() {
       
       // Check if there's an image attached
       if (selectedFile && selectedFile.type.startsWith('image/')) {
+        // Store reference to file before clearing
+        const fileToSend = selectedFile;
+        
+        // Clear the selected file immediately so it disappears from bottom
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        
         // Send image with FormData
         const formData = new FormData();
         formData.append('message', userMessage.content);
-        formData.append('image', selectedFile);
+        formData.append('image', fileToSend);
         if (currentThreadId) {
           formData.append('thread_id', currentThreadId.toString());
         }
@@ -344,12 +358,6 @@ function HomeContent() {
         };
 
         setMessages(prev => [...prev, assistantMessage]);
-        
-        // Clear the selected file
-        setSelectedFile(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
         
         if (data.thread_id) {
           if (currentThreadId !== data.thread_id) {
