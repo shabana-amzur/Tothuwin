@@ -316,8 +316,9 @@ async def load_google_sheet(
         df = excel_service.load_google_sheet(request.url, request.sheet_name)
         summary = excel_service.get_dataframe_summary(df)
         
-        # Extract sheet ID for filename
+        # Extract sheet ID and title
         sheet_id = excel_service.extract_sheet_id(request.url)
+        sheet_title = excel_service.get_google_sheet_title(request.url)
         filename = f"gsheet_{sheet_id}_{request.sheet_name or 'default'}"
         
         # Create document record (no actual file saved for Google Sheets)
@@ -325,7 +326,7 @@ async def load_google_sheet(
             user_id=current_user.id,
             thread_id=request.thread_id,
             filename=filename,
-            original_filename=f"Google Sheet ({sheet_id})",
+            original_filename=sheet_title,
             file_path=request.url,  # Store URL instead of file path
             file_size=0,  # No local file
             file_type="gsheet",
@@ -359,4 +360,52 @@ async def load_google_sheet(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error loading Google Sheet: {str(e)}"
+        )
+
+
+@router.delete("/{document_id}")
+async def delete_excel_file(
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete an Excel/CSV file"""
+    try:
+        # Get document
+        document = db.query(Document).filter(
+            Document.id == document_id,
+            Document.user_id == current_user.id,
+            Document.doc_type.in_(["excel", "csv", "gsheet"])
+        ).first()
+        
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="File not found"
+            )
+        
+        # Delete file from filesystem (if not Google Sheet)
+        if document.doc_type != "gsheet":
+            file_path = UPLOAD_DIR / document.filename
+            if file_path.exists():
+                os.remove(file_path)
+        
+        # Delete from database
+        db.delete(document)
+        db.commit()
+        
+        logger.info(f"Excel file {document_id} deleted by user {current_user.email}")
+        
+        return {
+            "message": "File deleted successfully",
+            "document_id": document_id
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting file: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete file"
         )

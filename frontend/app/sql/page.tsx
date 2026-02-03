@@ -151,7 +151,7 @@ export default function NL2SQLPage() {
         <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Schema Panel */}
         {schemaVisible && schema && (
-          <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <div className="mb-6 bg-[#181818] rounded-lg p-4">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold text-white">Database Schema</h2>
               <button
@@ -168,7 +168,7 @@ export default function NL2SQLPage() {
         )}
 
         {/* Query Input */}
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+        <div className="bg-[#181818] rounded-lg p-6 mb-6">
           <form onSubmit={executeQuery}>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Ask a question about your database
@@ -180,12 +180,13 @@ export default function NL2SQLPage() {
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="e.g., How many users are registered?"
                 disabled={isLoading}
-                className="flex-1 rounded-lg border border-gray-600 bg-gray-700 text-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-400"
+                className="flex-1 rounded-lg bg-[#0f0f0f] text-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-400"
               />
               <button
                 type="submit"
                 disabled={isLoading || !question.trim()}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: '#ec6438' }}
+                className="text-white px-8 py-3 rounded-lg font-medium hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <span className="flex items-center space-x-2">
@@ -208,7 +209,7 @@ export default function NL2SQLPage() {
                   key={idx}
                   onClick={() => setQuestion(example)}
                   disabled={isLoading}
-                  className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+                  className="text-xs bg-[#0f0f0f] hover:bg-[#252525] text-gray-300 px-3 py-1.5 rounded-full transition-all disabled:opacity-50"
                 >
                   {example}
                 </button>
@@ -222,7 +223,7 @@ export default function NL2SQLPage() {
           <div className="space-y-4">
             {/* Generated SQL */}
             {result.sql && (
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <div className="bg-[#181818] rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold text-gray-300">Generated SQL</h3>
                   <div className="flex items-center space-x-2">
@@ -242,7 +243,7 @@ export default function NL2SQLPage() {
                     )}
                   </div>
                 </div>
-                <pre className="bg-gray-900 rounded p-3 text-sm text-blue-300 overflow-x-auto">
+                <pre className="bg-[#0f0f0f] rounded p-3 text-sm text-blue-300 overflow-x-auto">
                   {result.sql}
                 </pre>
               </div>
@@ -250,7 +251,7 @@ export default function NL2SQLPage() {
 
             {/* Success Message for Write Operations */}
             {result.success && result.message && (
-              <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
+              <div className="bg-green-900/20 rounded-lg p-4">
                 <div className="flex items-start space-x-2">
                   <svg className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -270,7 +271,7 @@ export default function NL2SQLPage() {
 
             {/* Error Message */}
             {!result.success && result.error && (
-              <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+              <div className="bg-red-900/20 rounded-lg p-4">
                 <div className="flex items-start space-x-2">
                   <svg className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
@@ -285,15 +286,15 @@ export default function NL2SQLPage() {
 
             {/* Data Results */}
             {result.success && result.data && result.data.length > 0 && (
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <div className="bg-[#181818] rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-300">
                     Results ({result.row_count} {result.row_count === 1 ? 'row' : 'rows'})
                   </h3>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-700">
-                    <thead className="bg-gray-900">
+                  <table className="min-w-full divide-y divide-[#0f0f0f]">
+                    <thead className="bg-[#0f0f0f]">
                       <tr>
                         {result.columns?.map((col, idx) => (
                           <th
@@ -305,9 +306,9 @@ export default function NL2SQLPage() {
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="bg-gray-800 divide-y divide-gray-700">
+                    <tbody className="bg-[#181818] divide-y divide-[#0f0f0f]">
                       {result.data.map((row, rowIdx) => (
-                        <tr key={rowIdx} className="hover:bg-gray-750">
+                        <tr key={rowIdx} className="hover:bg-[#252525]">
                           {result.columns?.map((col, colIdx) => (
                             <td
                               key={colIdx}
@@ -328,7 +329,7 @@ export default function NL2SQLPage() {
 
             {/* Empty Results */}
             {result.success && result.data && result.data.length === 0 && (
-              <div className="bg-gray-800 rounded-lg p-8 border border-gray-700 text-center">
+              <div className="bg-[#181818] rounded-lg p-8 text-center">
                 <svg className="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
@@ -340,7 +341,7 @@ export default function NL2SQLPage() {
 
         {/* Info Panel */}
         {!result && (
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <div className="bg-[#181818] rounded-lg p-6">
             <h3 className="text-lg font-semibold text-white mb-3">How it works</h3>
             <div className="space-y-2 text-sm text-gray-300">
               <p>✓ Type your question in natural language</p>
@@ -360,7 +361,7 @@ export default function NL2SQLPage() {
       {/* Confirmation Modal */}
       {showConfirmation && result && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full border border-gray-700">
+          <div className="bg-[#181818] rounded-lg shadow-2xl max-w-2xl w-full">
             <div className="p-6">
               <div className="flex items-start space-x-3 mb-4">
                 <svg className="w-8 h-8 text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,7 +375,7 @@ export default function NL2SQLPage() {
                 </div>
               </div>
 
-              <div className="bg-gray-900 rounded-lg p-4 mb-4">
+              <div className="bg-[#0f0f0f] rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-gray-400 uppercase">Generated SQL</span>
                   <span className={`text-xs px-2 py-1 rounded font-medium bg-orange-900/30 text-orange-400`}>
@@ -386,7 +387,7 @@ export default function NL2SQLPage() {
                 </pre>
               </div>
 
-              <div className="bg-yellow-900/20 border border-yellow-800 rounded-lg p-3 mb-6">
+              <div className="bg-yellow-900/20 rounded-lg p-3 mb-6">
                 <p className="text-xs text-yellow-300">
                   ⚠️ <strong>Warning:</strong> This operation will modify your database. Make sure you understand what this query does before confirming.
                 </p>
@@ -395,13 +396,14 @@ export default function NL2SQLPage() {
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={cancelExecution}
-                  className="px-6 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  className="px-6 py-2 text-sm font-medium text-gray-300 bg-[#0f0f0f] hover:bg-[#252525] rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmExecution}
-                  className="px-6 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors"
+                  style={{ backgroundColor: '#ec6438' }}
+                  className="px-6 py-2 text-sm font-medium text-white hover:opacity-90 rounded-lg transition-colors"
                 >
                   Confirm & Execute
                 </button>

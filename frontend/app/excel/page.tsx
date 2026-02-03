@@ -205,6 +205,41 @@ export default function ExcelPage() {
     }
   };
 
+  const handleDeleteFile = async (fileId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent file selection when clicking delete
+    
+    if (!confirm('Are you sure you want to delete this file?')) return;
+    
+    setError('');
+    
+    try {
+      const response = await fetch(`http://localhost:8001/api/excel/${fileId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to delete file');
+      }
+      
+      // Remove from files list
+      setFiles(files.filter(f => f.id !== fileId));
+      
+      // Clear selection if deleted file was selected
+      if (selectedFile?.id === fileId) {
+        setSelectedFile(null);
+        setSummary(null);
+        setAnswer('');
+      }
+      
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete file');
+    }
+  };
+
   const exampleQuestions = [
     "What is the total sum of all values in the first column?",
     "How many rows contain data?",
@@ -220,7 +255,7 @@ export default function ExcelPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Upload Section */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
+        <div className="bg-[#181818] rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold text-white mb-4">Upload Excel/CSV or Load Google Sheet</h2>
           
           {/* File Upload */}
@@ -235,14 +270,16 @@ export default function ExcelPage() {
                   file:mr-4 file:py-2 file:px-4
                   file:rounded-full file:border-0
                   file:text-sm file:font-semibold
-                  file:bg-green-600 file:text-white
-                  hover:file:bg-green-700 file:cursor-pointer"
+                  file:bg-[#ec6438] file:text-white
+                  hover:file:opacity-90 file:cursor-pointer file:transition-all"
+                style={{ colorScheme: 'dark' }}
               />
               
               <button
                 onClick={handleUpload}
                 disabled={!uploadFile || isUploading}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                style={{ backgroundColor: '#ec6438' }}
+                className="px-6 py-2 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-all"
               >
                 {isUploading ? 'Uploading...' : 'Upload'}
               </button>
@@ -261,13 +298,14 @@ export default function ExcelPage() {
                 value={googleSheetUrl}
                 onChange={(e) => setGoogleSheetUrl(e.target.value)}
                 placeholder="Paste Google Sheets link here (must be publicly accessible)"
-                className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600 focus:outline-none focus:border-blue-500"
+                className="flex-1 bg-[#0f0f0f] text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
               
               <button
                 onClick={handleLoadGoogleSheet}
                 disabled={!googleSheetUrl.trim() || isLoadingSheet}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                style={{ backgroundColor: '#ec6438' }}
+                className="px-6 py-2 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-all"
               >
                 {isLoadingSheet ? 'Loading...' : 'Load Sheet'}
               </button>
@@ -279,7 +317,7 @@ export default function ExcelPage() {
         </div>
 
         {error && (
-          <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-[#0f0f0f] text-red-200 px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
@@ -287,7 +325,7 @@ export default function ExcelPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* File List */}
           <div className="lg:col-span-1">
-            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+            <div className="bg-[#181818] rounded-lg p-6">
               <h2 className="text-xl font-semibold text-white mb-4">Your Files</h2>
               
               {files.length === 0 ? (
@@ -295,25 +333,40 @@ export default function ExcelPage() {
               ) : (
                 <div className="space-y-2">
                   {files.map((file) => (
-                    <button
+                    <div
                       key={file.id}
-                      onClick={() => {
-                        setSelectedFile(file);
-                        setSummary(null);
-                        setAnswer('');
-                        loadFileSummary(file.id);
-                      }}
-                      className={`w-full text-left p-3 rounded-lg transition-colors ${
+                      className={`w-full text-left p-3 rounded-lg transition-all flex items-center justify-between group ${
                         selectedFile?.id === file.id
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          ? 'bg-[#ec6438] text-white'
+                          : 'bg-[#0f0f0f] text-gray-300 hover:bg-[#252525]'
                       }`}
                     >
-                      <div className="font-medium truncate">{file.original_filename}</div>
-                      <div className="text-xs opacity-75 mt-1">
-                        {file.rows} rows × {file.columns} cols
-                      </div>
-                    </button>
+                      <button
+                        onClick={() => {
+                          setSelectedFile(file);
+                          setSummary(null);
+                          setAnswer('');
+                          loadFileSummary(file.id);
+                        }}
+                        className="flex-1 text-left overflow-hidden"
+                      >
+                        <div className="font-medium truncate" title={file.original_filename}>
+                          {file.original_filename}
+                        </div>
+                        <div className="text-xs opacity-75 mt-1">
+                          {file.rows} rows × {file.columns} cols
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteFile(file.id, e)}
+                        className="ml-2 p-2 rounded hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+                        title="Delete file"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -325,7 +378,7 @@ export default function ExcelPage() {
             {selectedFile ? (
               <>
                 {/* File Info */}
-                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <div className="bg-[#181818] rounded-lg p-6">
                   <h2 className="text-xl font-semibold text-white mb-4">
                     {selectedFile.original_filename}
                   </h2>
@@ -339,7 +392,7 @@ export default function ExcelPage() {
                           setSelectedSheet(e.target.value);
                           loadFileSummary(selectedFile.id, e.target.value);
                         }}
-                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 border border-gray-600"
+                        className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                       >
                         {selectedFile.sheet_names.map((sheet) => (
                           <option key={sheet} value={sheet}>{sheet}</option>
@@ -367,7 +420,7 @@ export default function ExcelPage() {
                         <h3 className="text-gray-400 text-sm mb-2">Columns:</h3>
                         <div className="flex flex-wrap gap-2">
                           {summary.column_names.map((col) => (
-                            <span key={col} className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
+                            <span key={col} className="bg-[#0f0f0f] text-gray-300 px-3 py-1 rounded-full text-xs">
                               {col}
                             </span>
                           ))}
@@ -379,7 +432,7 @@ export default function ExcelPage() {
                           <h3 className="text-gray-400 text-sm mb-2">Preview (first 5 rows):</h3>
                           <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                              <thead className="bg-gray-700">
+                              <thead className="bg-[#0f0f0f]">
                                 <tr>
                                   {summary.column_names.map((col) => (
                                     <th key={col} className="px-3 py-2 text-gray-300">{col}</th>
@@ -388,7 +441,7 @@ export default function ExcelPage() {
                               </thead>
                               <tbody>
                                 {summary.sample_data.map((row, idx) => (
-                                  <tr key={idx} className="border-t border-gray-700">
+                                  <tr key={idx} className="border-t border-[#0f0f0f]">
                                     {summary.column_names.map((col) => (
                                       <td key={col} className="px-3 py-2 text-gray-400">
                                         {row[col] !== null && row[col] !== undefined ? String(row[col]) : '-'}
@@ -406,7 +459,7 @@ export default function ExcelPage() {
                 </div>
 
                 {/* Ask Question */}
-                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <div className="bg-[#181818] rounded-lg p-6">
                   <h2 className="text-xl font-semibold text-white mb-4">Ask Questions</h2>
                   
                   <div className="space-y-4">
@@ -415,7 +468,7 @@ export default function ExcelPage() {
                         value={question}
                         onChange={(e) => setQuestion(e.target.value)}
                         placeholder="Ask a question about your data..."
-                        className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:border-green-500 resize-none"
+                        className="w-full bg-[#0f0f0f] text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                         rows={3}
                       />
                     </div>
@@ -423,7 +476,8 @@ export default function ExcelPage() {
                     <button
                       onClick={handleAskQuestion}
                       disabled={!question.trim() || isAsking}
-                      className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      style={{ backgroundColor: '#ec6438' }}
+                      className="w-full px-6 py-3 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all"
                     >
                       {isAsking ? 'Analyzing...' : 'Ask Question'}
                     </button>
@@ -435,7 +489,7 @@ export default function ExcelPage() {
                           <li 
                             key={idx}
                             onClick={() => setQuestion(q)}
-                            className="cursor-pointer hover:text-green-400 transition-colors"
+                            className="cursor-pointer hover:text-orange-400 transition-colors"
                           >
                             • {q}
                           </li>
@@ -445,21 +499,21 @@ export default function ExcelPage() {
                   </div>
                   
                   {answer && (
-                    <div className="mt-6 bg-gray-700 rounded-lg p-4 border border-gray-600">
-                      <h3 className="text-green-400 font-semibold mb-2">Answer:</h3>
+                    <div className="mt-6 bg-[#0f0f0f] rounded-lg p-4">
+                      <h3 className="text-orange-400 font-semibold mb-2">Answer:</h3>
                       <div className="text-gray-200 whitespace-pre-wrap">{answer}</div>
                     </div>
                   )}
                 </div>
               </>
             ) : (
-              <div className="bg-gray-800 rounded-lg p-12 border border-gray-700 text-center">
+              <div className="bg-[#181818] rounded-lg p-12 text-center">
                 <div className="text-6xl mb-4">📊</div>
                 <h2 className="text-2xl font-semibold text-white mb-2">
-                  Upload an Excel or CSV File
+                  Select a File
                 </h2>
                 <p className="text-gray-400">
-                  Upload a file to analyze your data and ask questions using AI
+                  Choose a file from your uploaded files or upload a new one above
                 </p>
               </div>
             )}

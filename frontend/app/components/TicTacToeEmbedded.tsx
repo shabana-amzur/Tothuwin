@@ -144,8 +144,15 @@ export default function TicTacToeEmbedded({ token }: TicTacToeEmbeddedProps) {
           <span className="font-semibold text-blue-600">You (X)</span> vs <span className="font-semibold text-red-600">AI (O)</span>
         </div>
         <button
-          onClick={startNewGame}
-          className="px-4 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('New Game button clicked (embedded)');
+            startNewGame();
+          }}
+          disabled={!token}
+          style={{ backgroundColor: '#ec6438' }}
+          className="px-4 py-1.5 text-white text-sm rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer transition-all z-10 relative shadow-lg"
         >
           New Game
         </button>
@@ -185,11 +192,12 @@ export default function TicTacToeEmbedded({ token }: TicTacToeEmbeddedProps) {
               className={`
                 aspect-square rounded-lg text-4xl font-bold
                 transition-all duration-200 transform
-                ${symbol === 'X' ? 'text-blue-600' : ''}
-                ${symbol === 'O' ? 'text-red-600' : ''}
+                flex items-center justify-center
+                ${symbol === 'X' ? 'text-blue-400 dark:text-blue-300' : ''}
+                ${symbol === 'O' ? 'text-red-500 dark:text-red-400' : ''}
                 ${isAvailable && !aiThinking
-                  ? 'bg-white dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500 hover:scale-105 cursor-pointer shadow-md'
-                  : 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed shadow-inner'
+                  ? 'bg-[#1a1a1a] dark:bg-[#1a1a1a] hover:bg-[#252525] dark:hover:bg-[#252525] hover:scale-105 cursor-pointer shadow-lg active:scale-95'
+                  : 'bg-[#0f0f0f] dark:bg-[#0f0f0f] cursor-not-allowed opacity-60'
                 }
               `}
             >

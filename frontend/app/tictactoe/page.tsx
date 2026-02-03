@@ -148,11 +148,17 @@ export default function TicTacToePage() {
               <span className="text-2xl font-bold text-red-600">AI (O)</span>
             </div>
             <button
-              onClick={startNewGame}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('New Game button clicked');
+                startNewGame();
+              }}
               disabled={loading}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 transition-colors"
+              style={{ backgroundColor: '#ec6438' }}
+              className="px-4 py-2 text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer transition-all z-10 relative shadow-lg"
             >
-              New Game
+              {loading ? 'Loading...' : 'New Game'}
             </button>
           </div>
 
@@ -202,13 +208,13 @@ export default function TicTacToePage() {
                   className={`
                     aspect-square rounded-lg text-5xl font-bold
                     transition-all duration-200 transform
-                    ${symbol === 'X' ? 'text-blue-600' : ''}
-                    ${symbol === 'O' ? 'text-red-600' : ''}
+                    flex items-center justify-center
+                    ${symbol === 'X' ? 'text-blue-400 dark:text-blue-300' : ''}
+                    ${symbol === 'O' ? 'text-red-500 dark:text-red-400' : ''}
                     ${isAvailable && !aiThinking
-                      ? 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 hover:scale-105 cursor-pointer'
-                      : 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed'
+                      ? 'bg-[#1a1a1a] dark:bg-[#1a1a1a] hover:bg-[#252525] dark:hover:bg-[#252525] hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95'
+                      : 'bg-[#0f0f0f] dark:bg-[#0f0f0f] cursor-not-allowed opacity-60'
                     }
-                    ${symbol ? 'shadow-inner' : 'shadow-md'}
                     ${isWinningCell ? 'ring-4 ring-yellow-400' : ''}
                   `}
                 >

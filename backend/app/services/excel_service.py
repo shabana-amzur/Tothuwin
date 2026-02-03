@@ -88,6 +88,32 @@ class ExcelService:
                 logger.error(f"Alternative method also failed: {str(e2)}")
                 raise ValueError("Failed to load Google Sheet. Make sure the sheet is publicly accessible (Anyone with the link can view).")
     
+    def get_google_sheet_title(self, url: str) -> str:
+        """Extract Google Sheet title from URL if possible"""
+        import requests
+        try:
+            sheet_id = self.extract_sheet_id(url)
+            if not sheet_id:
+                return "Google Sheet"
+            
+            # Try to fetch title from public metadata
+            # Google Sheets title is often in the page HTML
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                # Look for title in HTML
+                import re
+                title_match = re.search(r'<title>([^<]+)</title>', response.text)
+                if title_match:
+                    title = title_match.group(1)
+                    # Remove " - Google Sheets" suffix if present
+                    title = title.replace(' - Google Sheets', '').strip()
+                    if title and title != 'Google Sheets':
+                        return title
+        except Exception as e:
+            logger.warning(f"Could not extract sheet title: {str(e)}")
+        
+        return f"Sheet {self.extract_sheet_id(url)[:8]}"
+    
     def load_excel_file(self, file_path: str, sheet_name: Optional[str] = None) -> pd.DataFrame:
         """Load Excel file into pandas DataFrame"""
         try:
