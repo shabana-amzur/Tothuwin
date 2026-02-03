@@ -557,7 +557,7 @@ export default function Home() {
       
       // Add thread_id as a query parameter
       const url = new URL('http://localhost:8001/api/documents/upload');
-      url.searchParams.append('thread_id', threadId.toString());
+      url.searchParams.append('thread_id', threadId!.toString());
 
       const response = await fetch(url.toString(), {
         method: 'POST',
@@ -952,9 +952,9 @@ export default function Home() {
             {/* Input Area */}
             <div className="bg-white dark:bg-[#212121] px-4 py-4 shadow-lg flex-shrink-0">
               <form onSubmit={sendMessage} className="max-w-4xl mx-auto">
-            {/* Excel file active indicator */}
-            {uploadedExcelId && excelFileName && (
-              <div className="mb-3 flex items-center justify-between bg-green-900 bg-opacity-30 rounded-lg px-4 py-2">
+                {/* Excel file active indicator */}
+                {uploadedExcelId && excelFileName && (
+                  <div className="mb-3 flex items-center justify-between bg-green-900 bg-opacity-30 rounded-lg px-4 py-2">
                 <div className="flex items-center space-x-2">
                   <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -975,23 +975,23 @@ export default function Home() {
                 >
                   ✕
                 </button>
-              </div>
-            )}
-            
-            {/* Selected file display */}
-            {selectedFile && (
-              <div className="mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
-                {selectedFile.type.startsWith('image/') && (
-                  <div className="mb-2">
-                    <img 
-                      src={URL.createObjectURL(selectedFile)} 
-                      alt="Preview" 
-                      className="max-h-32 rounded border border-gray-600"
-                    />
                   </div>
                 )}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+                
+                {/* Selected file display */}
+                {selectedFile && (
+                  <div className="mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
+                    {selectedFile.type.startsWith('image/') && (
+                      <div className="mb-2">
+                        <img 
+                          src={URL.createObjectURL(selectedFile)} 
+                          alt="Preview" 
+                          className="max-h-32 rounded border border-gray-600"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
                     {selectedFile.type.startsWith('image/') ? (
                       <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -1001,36 +1001,37 @@ export default function Home() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
                     )}
-                    <span className="text-sm text-gray-300">{selectedFile.name}</span>
-                    <span className="text-xs text-gray-500">({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+                        <span className="text-sm text-gray-300">{selectedFile.name}</span>
+                        <span className="text-xs text-gray-500">({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          type="button"
+                          onClick={uploadFile}
+                          disabled={isUploadingFile}
+                          className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded disabled:opacity-50"
+                        >
+                          {isUploadingFile ? 'Uploading...' : 'Upload'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={removeSelectedFile}
+                          className="text-sm text-gray-400 hover:text-white"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                <div className="flex space-x-2">
+                )}
+                
+                {/* Model Selector */}
+                <div ref={modelSelectorRef} className="mb-3 relative">
                   <button
                     type="button"
-                    onClick={uploadFile}
-                    disabled={isUploadingFile}
-                    className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded disabled:opacity-50"
+                    onClick={() => setShowModelSelector(!showModelSelector)}
+                    className="flex items-center space-x-2 bg-[#0f0f0f] hover:bg-[#252525] text-white px-4 py-2 rounded-lg transition-colors"
                   >
-                    {isUploadingFile ? 'Uploading...' : 'Upload'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={removeSelectedFile}
-                    className="text-sm text-gray-400 hover:text-white"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            {/* Model Selector */}
-            <div ref={modelSelectorRef} className="mb-3 relative">
-              <button
-                type="button"
-                onClick={() => setShowModelSelector(!showModelSelector)}
-                className="flex items-center space-x-2 bg-[#0f0f0f] hover:bg-[#252525] text-white px-4 py-2 rounded-lg transition-colors"
-              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
@@ -1043,10 +1044,10 @@ export default function Home() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-              </button>
-              
-              {/* Model dropdown */}
-              {showModelSelector && (
+                  </button>
+                  
+                  {/* Model dropdown */}
+                  {showModelSelector && (
                 <div className="absolute bottom-full mb-2 left-0 bg-[#181818] rounded-lg shadow-xl z-50 min-w-[280px">
                   <div className="p-2">
                     <div className="text-xs text-gray-300 px-3 py-2 font-semibold">Select Model</div>
@@ -1126,80 +1127,79 @@ export default function Home() {
                     </button>
                   </div>
                 </div>
-              )}
+                  )}
+                </div>
+                
+                <div className="flex space-x-3">
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.txt,.docx,.jpg,.jpeg,.png,.gif,.webp,image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  
+                  {/* File upload button */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading || isUploadingFile}
+                    className="bg-[#0f0f0f] hover:bg-[#252525] text-white p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Upload document or image"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                    </svg>
+                  </button>
+                  
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type your message... (Supports Markdown, ↑↓ for history)"
+                    disabled={isLoading}
+                    className="flex-1 rounded-full bg-[#0f0f0f] text-white px-6 py-3 focus:outline-none focus:ring-2 focus:ring-[#ec6438] disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-400"
+                  />
+                  
+                  {/* Stop button - shown when loading, next to send button */}
+                  {isLoading && (
+                    <button
+                      type="button"
+                      onClick={stopGeneration}
+                      className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white p-3 rounded-full transition-colors"
+                      title="Stop generation"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <rect x="6" y="6" width="12" height="12" rx="1" />
+                      </svg>
+                    </button>
+                  )}
+                  
+                  {/* Send button - always visible but disabled when loading */}
+                  <button
+                    type="submit"
+                    disabled={isLoading || !input.trim()}
+                    className="bg-[#ec6438] hover:bg-[#d65430] text-white px-8 py-3 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#ec6438]"
+                    title="Send message"
+                  >
+                    Send
+                  </button>
+                </div>
+              </form>
             </div>
-            
-            <div className="flex space-x-3">
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.txt,.docx,.jpg,.jpeg,.png,.gif,.webp,image/*"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              
-              {/* File upload button */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading || isUploadingFile}
-                className="bg-[#0f0f0f] hover:bg-[#252525] text-white p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Upload document or image"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-              </button>
-              
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message... (Supports Markdown, ↑↓ for history)"
-                disabled={isLoading}
-                className="flex-1 rounded-full bg-[#0f0f0f] text-white px-6 py-3 focus:outline-none focus:ring-2 focus:ring-[#ec6438] disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-400"
-              />
-              
-              {/* Stop button - shown when loading, next to send button */}
-              {isLoading && (
-                <button
-                  type="button"
-                  onClick={stopGeneration}
-                  className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-white p-3 rounded-full transition-colors"
-                  title="Stop generation"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <rect x="6" y="6" width="12" height="12" rx="1" />
-                  </svg>
-                </button>
-              )}
-              
-              {/* Send button - always visible but disabled when loading */}
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="bg-[#ec6438] hover:bg-[#d65430] text-white px-8 py-3 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#ec6438]"
-                title="Send message"
-              >
-                Send
-              </button>
-            </div>
-          </form>
-        </div>
-      </>
-    ) : (
-      <div className="flex-1 overflow-hidden">
-        {activeFeature === 'sql' && <NL2SQLPage />}
-        {activeFeature === 'excel' && <ExcelPage />}
-        {activeFeature === 'game' && <TicTacToePage />}
-        {activeFeature === 'game' && <TicTacToePage />}
-        {activeFeature === 'image' && (
-          <div className="h-full overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <div className="bg-[#181818] rounded-lg p-6">
+          </>
+        ) : (
+          <div className="flex-1 overflow-hidden">
+            {activeFeature === 'sql' && <NL2SQLPage />}
+            {activeFeature === 'excel' && <ExcelPage />}
+            {activeFeature === 'game' && <TicTacToePage />}
+            {activeFeature === 'image' && (
+              <div className="h-full overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                  <div className="bg-[#181818] rounded-lg p-6">
                     <h2 className="text-2xl font-bold text-white mb-6">🖼️ Image Validation</h2>
                     
                     {/* Demo mode toggle */}
@@ -1316,13 +1316,13 @@ export default function Home() {
                         <li>• Results will appear in the chat</li>
                       </ul>
                     </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>
-    )}
     </div>
-  </div>
   );
 }
