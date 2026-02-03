@@ -2,16 +2,16 @@
 
 ## 🎯 Overview
 
-This document describes the **MCP Style Agent** - a modular AI agent system built with the **Planner-Selector-Executor-Synthesizer** pattern. This is a clean, educational implementation that demonstrates how to build sophisticated AI agents with clear separation of concerns.
+This document describes the **MCP Style Agent** - a modular AI agent system built with the **Planner-Selector-Executor-Validator-Synthesizer** pattern (5-component architecture). This is a clean, educational implementation that demonstrates how to build sophisticated AI agents with clear separation of concerns and built-in validation.
 
 ## 🏗️ Architecture
 
-### The MCP Pattern
+### The MCP Pattern (5 Components)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                        USER QUERY                             │
-│          "Calculate 25 * 4 and analyze the result"           │
+│          "What is the current price of gold and silver?"     │
 └────────────────────────┬─────────────────────────────────────┘
                          │
                          ▼
@@ -22,8 +22,8 @@ This document describes the **MCP Style Agent** - a modular AI agent system buil
          │  • Identifies dependencies        │
          └────────────┬──────────────────────┘
                       │
-                      │ Step 1: Calculate 25*4
-                      │ Step 2: Analyze result
+                      │ Step 1: Get gold price
+                      │ Step 2: Get silver price
                       │
                       ▼
          ┌───────────────────────────────────┐
@@ -33,22 +33,36 @@ This document describes the **MCP Style Agent** - a modular AI agent system buil
          │  • Resolves dependencies          │
          └────────────┬──────────────────────┘
                       │
-                      │ Step 1 → Calculator
-                      │ Step 2 → Text Analyzer
+                      │ Step 1 → commodity_price
+                      │ Step 2 → commodity_price
                       │
                       ▼
          ┌───────────────────────────────────┐
          │   COMPONENT 3: EXECUTOR           │
-         │  • Runs Calculator(25*4) → 100    │
-         │  • Runs TextAnalyzer("100")       │
+         │  • Runs commodity_price("gold")   │
+         │  • Runs commodity_price("silver") │
          │  • Collects all results           │
          └────────────┬──────────────────────┘
                       │
-                      │ Results: {1: 100, 2: {...}}
+                      │ Results: {1: $4940, 2: $86.57}
                       │
                       ▼
          ┌───────────────────────────────────┐
-         │  COMPONENT 4: SYNTHESIZER         │
+         │   COMPONENT 4: VALIDATOR (NEW!)   │
+         │  • Cross-checks results           │
+         │  • Validates reasonableness       │
+         │  • Checks consistency             │
+         │  • Assesses data quality          │
+         │  • Confidence scoring (0-100)     │
+         └────────────┬──────────────────────┘
+                      │
+                      │ Validation: 95% confidence
+                      │ Warnings: Future timestamps detected
+                      │ Recommendation: RETRY_WITH_CAUTION
+                      │
+                      ▼
+         ┌───────────────────────────────────┐
+         │   COMPONENT 5: SYNTHESIZER        │
          │  • Combines results               │
          │  • Generates natural response     │
          │  • Formats for user               │
@@ -57,8 +71,9 @@ This document describes the **MCP Style Agent** - a modular AI agent system buil
                       ▼
          ┌───────────────────────────────────┐
          │         FINAL RESPONSE             │
-         │  "25 multiplied by 4 equals 100.  │
-         │   The result contains 3 digits..." │
+         │  "The current price of gold is    │
+         │   $4940.0 USD and silver is       │
+         │   $86.57 USD."                    │
          └───────────────────────────────────┘
 ```
 
@@ -70,9 +85,10 @@ backend/
 │   ├── api/
 │   │   └── mcp.py                    # API endpoints for MCP agents
 │   └── services/
-│       ├── mcp_style_agent.py        # 🆕 NEW: MCP Style Agent implementation
+│       ├── mcp_style_agent.py        # 🆕 MCP Style Agent (5-component)
 │       ├── mcp_agent.py              # Original MCP-enhanced Langchain agent
 │       └── mcp_server.py             # MCP server with resources and tools
+└── test_validator.py                  # 🆕 Validator component test script
 ```
 
 ## 🔧 Components Deep Dive
@@ -197,7 +213,89 @@ class Executor:
         return results
 ```
 
-### Component 4: Synthesizer
+### Component 4: Validator (NEW!)
+
+**Role:** Quality assurance and cross-checking
+
+**Responsibilities:**
+- Validate execution results for accuracy
+- Check for data quality issues
+- Assess reasonableness of results
+- Detect inconsistencies or contradictions
+- Provide confidence scoring (0-100)
+- Generate warnings and recommendations
+
+**Input:** Original query + Plan + Execution results
+
+**Output:** Validation report (dict) with:
+- `valid`: Boolean (True/False)
+- `confidence_score`: 0-100
+- `warnings`: List of potential issues
+- `errors`: List of critical problems
+- `recommendation`: ACCEPT / REJECT / RETRY_WITH_CAUTION
+- `reasoning`: Detailed explanation
+
+**Example:**
+```python
+Input:
+  Query: "What is the current price of gold and silver?"
+  Results: {
+    1: {"current_price": 4940.0, "timestamp": "2026-02-03", "change_percent": 6.18},
+    2: {"current_price": 86.57, "timestamp": "2026-02-03", "change_percent": 12.42}
+  }
+
+Validator Output:
+  {
+    "valid": True,
+    "confidence_score": 95,
+    "warnings": [
+      "Future timestamp detected (2026-02-03)",
+      "Unusually high change percentages (6.18%, 12.42%)"
+    ],
+    "errors": [],
+    "recommendation": "RETRY_WITH_CAUTION",
+    "reasoning": "Prices are plausible but data quality concerns exist..."
+  }
+```
+
+**Validation Criteria:**
+1. **Reasonableness**: Are values in expected ranges?
+2. **Consistency**: Do results contradict each other?
+3. **Completeness**: Were all required data points obtained?
+4. **Data Quality**: Timestamps correct? Units valid?
+5. **Relevance**: Do results actually answer the query?
+
+**Key Code:**
+```python
+class Validator:
+    def validate_results(
+        self,
+        original_query: str,
+        plan: List[PlanStep],
+        results: Dict[int, ExecutionResult]
+    ) -> Dict[str, Any]:
+        # Use LLM to cross-check results
+        validation_prompt = """
+        You are a validator. Assess these results for:
+        1. Reasonableness
+        2. Consistency
+        3. Completeness
+        4. Data quality
+        5. Relevance to query
+        
+        Return JSON: {
+          "valid": bool,
+          "confidence_score": 0-100,
+          "warnings": [...],
+          "errors": [...],
+          "recommendation": "ACCEPT|REJECT|RETRY_WITH_CAUTION",
+          "reasoning": "..."
+        }
+        """
+        return self.llm.invoke(validation_prompt)
+```
+
+### Component 5: Synthesizer
 
 **Role:** Response generation
 
