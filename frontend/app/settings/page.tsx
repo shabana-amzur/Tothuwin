@@ -452,7 +452,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 z-10 text-black hover:text-gray-700 transition-colors focus:outline-none"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-10 text-[#ec6438] hover:text-[#d55730] transition-colors focus:outline-none"
                     tabIndex={-1}
                   >
                     {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -477,7 +477,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 z-10 text-black hover:text-gray-700 transition-colors focus:outline-none"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-10 text-[#ec6438] hover:text-[#d55730] transition-colors focus:outline-none"
                     tabIndex={-1}
                   >
                     {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -502,7 +502,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 z-10 text-black hover:text-gray-700 transition-colors focus:outline-none"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-10 text-[#ec6438] hover:text-[#d55730] transition-colors focus:outline-none"
                     tabIndex={-1}
                   >
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
