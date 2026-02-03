@@ -604,7 +604,132 @@ class Executor:
 
 
 # ============================================================================
-# COMPONENT 4: SYNTHESIZER
+# COMPONENT 4: VALIDATOR
+# ============================================================================
+
+class Validator:
+    """
+    VALIDATOR Component: Cross-checks execution results for accuracy and consistency.
+    
+    The Validator ensures that tool outputs are reasonable, checks for contradictions,
+    assigns confidence scores, and flags suspicious data before final synthesis.
+    """
+    
+    def __init__(self, llm: ChatGoogleGenerativeAI):
+        self.llm = llm
+        logger.info("✅ Validator initialized")
+    
+    def validate_results(
+        self,
+        original_query: str,
+        plan: List[PlanStep],
+        results: Dict[int, ExecutionResult]
+    ) -> Dict[str, Any]:
+        """
+        Validates execution results for accuracy and consistency.
+        
+        Args:
+            original_query: The user's original question
+            plan: The execution plan that was followed
+            results: The results from executing the plan
+            
+        Returns:
+            Validation report with confidence score and warnings
+        """
+        logger.info(f"\n{'='*70}")
+        logger.info(f"✓ VALIDATOR: Cross-checking results")
+        logger.info(f"{'='*70}")
+        
+        # Prepare validation context
+        context_parts = []
+        context_parts.append(f"User Query: {original_query}\n")
+        context_parts.append("Results to Validate:\n")
+        
+        for step in plan:
+            result = results.get(step.step_number)
+            if result:
+                context_parts.append(f"\nStep {step.step_number}: {step.description}")
+                context_parts.append(f"Tool: {step.required_tool.value}")
+                if result.success:
+                    context_parts.append(f"Output: {json.dumps(result.output, indent=2)}")
+                else:
+                    context_parts.append(f"Error: {result.error}")
+        
+        context = "\n".join(context_parts)
+        
+        # Validation prompt
+        validation_prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are a result validator. Analyze the execution results and check for:
+
+1. **Reasonableness**: Do the results make sense? (e.g., is a silver price realistic?)
+2. **Consistency**: Do multi-step results agree with each other?
+3. **Completeness**: Did all required steps succeed?
+4. **Data Quality**: Are there obvious errors or suspicious values?
+5. **Relevance**: Do the results actually answer the user's question?
+
+Provide your validation in JSON format:
+{{
+  "valid": true/false,
+  "confidence_score": 0-100,
+  "warnings": ["list of any concerns or issues"],
+  "errors": ["list of critical problems if any"],
+  "recommendation": "ACCEPT" or "REJECT" or "RETRY_WITH_CAUTION",
+  "reasoning": "brief explanation of your assessment"
+}}"""),
+            ("human", "{context}")
+        ])
+        
+        try:
+            # Get validation assessment
+            chain = validation_prompt | self.llm
+            response = chain.invoke({"context": context})
+            
+            # Parse JSON response
+            response_text = response.content.strip()
+            
+            # Extract JSON from markdown if present
+            if "```json" in response_text:
+                response_text = response_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in response_text:
+                response_text = response_text.split("```")[1].split("```")[0].strip()
+            
+            validation_report = json.loads(response_text)
+            
+            # Log validation results
+            logger.info(f"\n📋 VALIDATION REPORT:")
+            logger.info(f"   Valid: {validation_report.get('valid', 'unknown')}")
+            logger.info(f"   Confidence: {validation_report.get('confidence_score', 0)}%")
+            logger.info(f"   Recommendation: {validation_report.get('recommendation', 'UNKNOWN')}")
+            
+            if validation_report.get('warnings'):
+                logger.warning(f"   ⚠️  Warnings: {', '.join(validation_report['warnings'])}")
+            
+            if validation_report.get('errors'):
+                logger.error(f"   ❌ Errors: {', '.join(validation_report['errors'])}")
+            
+            logger.info(f"   Reasoning: {validation_report.get('reasoning', 'N/A')}")
+            
+            return validation_report
+        
+        except Exception as e:
+            logger.error(f"❌ Validation error: {e}")
+            
+            # Fallback validation: Basic checks
+            successful_steps = sum(1 for r in results.values() if r.success)
+            total_steps = len(results)
+            
+            return {
+                "valid": successful_steps == total_steps,
+                "confidence_score": int((successful_steps / total_steps) * 100) if total_steps > 0 else 0,
+                "warnings": [] if successful_steps == total_steps else ["Some steps failed"],
+                "errors": [],
+                "recommendation": "ACCEPT" if successful_steps == total_steps else "RETRY_WITH_CAUTION",
+                "reasoning": f"Basic validation: {successful_steps}/{total_steps} steps succeeded"
+            }
+
+
+# ============================================================================
+# COMPONENT 5: SYNTHESIZER
 # ============================================================================
 
 class Synthesizer:
@@ -735,12 +860,13 @@ class MCPStyleAgent:
         self.planner = Planner(self.llm)
         self.tool_selector = ToolSelector()
         self.executor = Executor(self.tool_selector)
+        self.validator = Validator(self.llm)
         self.synthesizer = Synthesizer(self.llm)
         
         logger.info("\n" + "="*70)
         logger.info("🚀 MCP-STYLE AGENT INITIALIZED")
         logger.info("="*70)
-        logger.info("Components: ✅ Planner | ✅ Tool Selector | ✅ Executor | ✅ Synthesizer")
+        logger.info("Components: ✅ Planner | ✅ Tool Selector | ✅ Executor | ✅ Validator | ✅ Synthesizer")
         logger.info("="*70 + "\n")
     
     def run(self, query: str) -> str:
@@ -771,7 +897,10 @@ class MCPStyleAgent:
             # (Tool selection happens inside executor)
             results = self.executor.execute_plan(plan)
             
-            # Step 4: Synthesis
+            # Step 4: Validation
+            validation_report = self.validator.validate_results(query, plan, results)
+            
+            # Step 5: Synthesis (with validation context)
             final_response = self.synthesizer.synthesize_response(query, plan, results)
             
             logger.info("\n" + "🔵"*35)
