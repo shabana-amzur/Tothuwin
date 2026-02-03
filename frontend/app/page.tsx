@@ -468,14 +468,29 @@ function HomeContent() {
   const uploadFile = async () => {
     if (!selectedFile) return;
     
-    // For images, just keep them attached - they'll be sent with the next message
+    // For images, show them in the chat and keep them attached for the next message
     if (selectedFile.type.startsWith('image/')) {
+      // Create image URL for display
+      const imageUrl = URL.createObjectURL(selectedFile);
+      
+      // Show user message with image
+      const userImageMessage: Message = {
+        role: 'user',
+        content: `📷 Uploaded image: ${selectedFile.name}`,
+        timestamp: new Date().toISOString(),
+        image_url: imageUrl,
+        is_image: true,
+      };
+      
+      // Show assistant's help message
       const uploadMessage: Message = {
         role: 'assistant',
         content: `📷 **Image attached!** You can now ask questions about this image.\n\nFor example:\n- "What's in this image?"\n- "Describe this medicine"\n- "What are the side effects?"\n- "Read the text in this image"`,
         timestamp: new Date().toISOString(),
       };
-      setMessages(prev => [...prev, uploadMessage]);
+      
+      setMessages(prev => [...prev, userImageMessage, uploadMessage]);
+      // Don't clear selectedFile - keep it for sending with the next message
       return;
     }
     
@@ -912,9 +927,21 @@ function HomeContent() {
                             )}
                           </>
                         ) : (
-                          <p className="whitespace-pre-wrap break-words">
-                            {message.content}
-                          </p>
+                          <>
+                            <p className="whitespace-pre-wrap break-words">
+                              {message.content}
+                            </p>
+                            {message.is_image && message.image_url && (
+                              <div className="mt-3">
+                                <img 
+                                  src={message.image_url}
+                                  alt="Uploaded image"
+                                  className="rounded-lg max-w-full h-auto shadow-lg border border-gray-600"
+                                  style={{ maxHeight: '400px' }}
+                                />
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
