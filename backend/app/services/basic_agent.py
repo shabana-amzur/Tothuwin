@@ -615,6 +615,175 @@ def world_time(country: str) -> str:
         return f"Error: {str(e)}"
 
 
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TOOL 13: Web Search (DuckDuckGo)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def web_search(query: str) -> str:
+    """
+    Search the web for real-time information using SerpAPI or fallback to web scraping.
+    
+    Args:
+        query: Search query string
+    
+    Returns:
+        Formatted search results with titles, snippets, and links
+        
+    Examples:
+        web_search("latest news on AI") → "1. Title: ... Snippet: ... URL: ..."
+        web_search("current weather in Tokyo") → "Weather information..."
+    """
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        import urllib.parse
+        
+        logger.info(f"🔍 Searching web for: {query}")
+        
+        # Use Google search with requests (simple fallback)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        }
+        
+        search_url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
+        response = requests.get(search_url, headers=headers, timeout=10)
+        
+        if response.status_code != 200:
+            return f"Search failed with status code: {response.status_code}"
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
+        results = soup.find_all('div', class_='result', limit=5)
+        
+        if not results:
+            return f"No results found for: {query}"
+        
+        formatted_results = []
+        for i, result in enumerate(results, 1):
+            title_tag = result.find('a', class_='result__a')
+            snippet_tag = result.find('a', class_='result__snippet')
+            
+            title = title_tag.text.strip() if title_tag else 'No title'
+            snippet = snippet_tag.text.strip() if snippet_tag else 'No description'
+            url = title_tag.get('href', '') if title_tag else ''
+            
+            formatted_results.append(f"{i}. {title}\n   {snippet}\n   Source: {url}")
+        
+        return "\n\n".join(formatted_results)
+    except ImportError:
+        return "Error: Required packages not installed. Run: pip install requests beautifulsoup4"
+    except Exception as e:
+        logger.error(f"Search error details: {e}")
+        return f"Search error: {str(e)}"
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TOOL 14: Stock & Commodity Prices (YFinance)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def get_financial_data(symbol: str) -> str:
+    """
+    Get real-time stock, commodity, or cryptocurrency prices using Yahoo Finance.
+    
+    Args:
+        symbol: Ticker symbol (e.g., 'AAPL', 'SI=F' for silver, 'BTC-USD')
+    
+    Returns:
+        Current price, change, and market info
+        
+    Examples:
+        get_financial_data("SI=F") → "Silver: $25.40 USD/oz (+0.5%)"
+        get_financial_data("AAPL") → "Apple Inc: $180.25 (+2.3%)"
+        get_financial_data("GC=F") → "Gold: $2050.00 USD/oz"
+    """
+    try:
+        import yfinance as yf
+        from datetime import datetime
+        
+        logger.info(f"💰 Fetching financial data for: {symbol}")
+        
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+        
+        # Get current price
+        current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
+        if not current_price:
+            return f"Error: Could not fetch price for {symbol}"
+        
+        name = info.get('longName') or info.get('shortName') or symbol
+        currency = info.get('currency', 'USD')
+        
+        # Calculate change percentage
+        previous_close = info.get('previousClose', current_price)
+        if previous_close and previous_close != 0:
+            change_pct = ((current_price - previous_close) / previous_close) * 100
+            change_str = f"({change_pct:+.2f}%)"
+        else:
+            change_str = ""
+        
+        # Market status
+        market_state = info.get('marketState', 'unknown')
+        
+        result = f"{name}: ${current_price:.2f} {currency} {change_str}"
+        if market_state:
+            result += f"\nMarket: {market_state}"
+        
+        # Add last updated time
+        result += f"\nUpdated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        
+        return result
+    except ImportError:
+        return "Error: yfinance package not installed. Run: pip install yfinance"
+    except Exception as e:
+        return f"Financial data error: {str(e)}"
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# TOOL 15: Commodity Prices Helper
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def commodity_price(commodity: str) -> str:
+    """
+    Get current price for popular commodities (gold, silver, oil, etc.).
+    
+    Args:
+        commodity: Commodity name (gold, silver, oil, copper, etc.)
+    
+    Returns:
+        Current price with market information
+        
+    Examples:
+        commodity_price("silver") → "Silver: $25.40 USD/oz (+0.5%)"
+        commodity_price("gold") → "Gold: $2050.00 USD/oz"
+        commodity_price("oil") → "Crude Oil: $78.50 USD/barrel"
+    """
+    try:
+        # Map commodity names to Yahoo Finance symbols
+        commodity_symbols = {
+            'silver': 'SI=F',
+            'gold': 'GC=F',
+            'oil': 'CL=F',
+            'crude oil': 'CL=F',
+            'copper': 'HG=F',
+            'platinum': 'PL=F',
+            'palladium': 'PA=F',
+            'natural gas': 'NG=F',
+            'wheat': 'ZW=F',
+            'corn': 'ZC=F',
+            'soybeans': 'ZS=F'
+        }
+        
+        commodity_lower = commodity.lower().strip()
+        symbol = commodity_symbols.get(commodity_lower)
+        
+        if not symbol:
+            available = ', '.join(commodity_symbols.keys())
+            return f"Error: Unknown commodity '{commodity}'. Try: {available}"
+        
+        return get_financial_data(symbol)
+    except Exception as e:
+        return f"Commodity price error: {str(e)}"
+
+
 # Tool registry
 TOOLS = {
     "calculator": {
@@ -664,6 +833,18 @@ TOOLS = {
     "world_time": {
         "function": world_time,
         "description": "Get current time for any country/city. Input: country or city name like 'India', 'Japan', 'USA', 'London'"
+    },
+    "web_search": {
+        "function": web_search,
+        "description": "Search the web for real-time information. Input: search query string like 'latest AI news' or 'current weather Tokyo'"
+    },
+    "get_financial_data": {
+        "function": get_financial_data,
+        "description": "Get stock/crypto prices. Input: ticker symbol like 'AAPL' (Apple), 'GOOGL' (Google), 'BTC-USD' (Bitcoin), 'SI=F' (Silver)"
+    },
+    "commodity_price": {
+        "function": commodity_price,
+        "description": "Get commodity prices. Input: commodity name like 'silver', 'gold', 'oil', 'copper', 'platinum'"
     }
 }
 
@@ -734,6 +915,9 @@ Available Tools:
 - random_generator: Generate random values. Input: JSON like {{"operation": "dice", "param": ""}}
 - unit_converter: Convert units. Input: JSON like {{"value": "5", "from_unit": "km", "to_unit": "m"}}
 - world_time: Get time for countries. Input: country name like "India", "Japan", "USA", "London"
+- web_search: Search the web for real-time info. Input: search query like "latest news on AI" or "current weather Tokyo"
+- get_financial_data: Get stock/crypto prices. Input: ticker symbol like "AAPL", "GOOGL", "BTC-USD", "SI=F"
+- commodity_price: Get commodity prices. Input: commodity name like "silver", "gold", "oil", "copper"
 - none: If you can answer directly without tools
 
 User Question: {user_input}
@@ -873,6 +1057,12 @@ Think step by step. Respond in this JSON format:
                 else:
                     country = action_input
                 observation = world_time(country)
+            elif action == 'web_search':
+                observation = web_search(action_input)
+            elif action == 'get_financial_data':
+                observation = get_financial_data(action_input)
+            elif action == 'commodity_price':
+                observation = commodity_price(action_input)
             else:
                 observation = f"Unknown tool: {action}"
             

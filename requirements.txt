@@ -26,6 +26,10 @@ langchain-openai==0.2.14
 langchain-community==0.3.14
 langchain-experimental==0.3.3  # For pandas agent
 
+# Web Search & Financial Data
+ddgs>=9.8.0  # Real-time web search (renamed from duckduckgo-search)
+yfinance==0.2.51  # Stock and commodity prices
+
 # Document Processing & RAG
 chromadb==0.5.23  # Vector database
 
