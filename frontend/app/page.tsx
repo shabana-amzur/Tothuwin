@@ -1189,9 +1189,9 @@ export default function Home() {
             </div>
           </form>
         </div>
-          </>
-        ) : (
-          <div className="flex-1 overflow-hidden">
+        </>
+      ) : (
+        <div className="flex-1 overflow-hidden">
             {activeFeature === 'sql' && <NL2SQLPage />}
             {activeFeature === 'excel' && <ExcelPage />}
             {activeFeature === 'game' && <TicTacToePage />}
@@ -1320,9 +1320,9 @@ export default function Home() {
                 </div>
               </div>
             )}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
     </div>
   );
 }
