@@ -39,6 +39,8 @@ class ToolType(Enum):
     SEARCH = "search"
     CALCULATOR = "calculator"
     TEXT_ANALYZER = "text_analyzer"
+    FINANCIAL_DATA = "financial_data"
+    COMMODITY_PRICE = "commodity_price"
     NONE = "none"  # For steps that don't need tools
 
 
@@ -74,42 +76,57 @@ class AgentTools:
     @staticmethod
     def search(query: str) -> Dict[str, Any]:
         """
-        Search tool - Mocked for demonstration
-        In production, this would call a real search API (e.g., Google, Bing, internal KB)
+        Search tool - Real-time web search using DuckDuckGo
         """
         logger.info(f"🔍 SEARCH TOOL: Searching for '{query}'")
         
-        # Mock search results based on keywords
-        mock_results = {
-            "python": [
-                {"title": "Python Official Docs", "snippet": "Python is a high-level programming language known for readability."},
-                {"title": "Python Tutorial", "snippet": "Learn Python step by step with examples."}
-            ],
-            "langchain": [
-                {"title": "LangChain Documentation", "snippet": "LangChain is a framework for developing LLM applications."},
-                {"title": "LangChain Agents", "snippet": "Agents use LLMs to make decisions about which actions to take."}
-            ],
-            "weather": [
-                {"title": "Weather Today", "snippet": "Current weather: Sunny, 72°F"}
-            ],
-            "default": [
-                {"title": "Search Result 1", "snippet": f"Information about {query}"},
-                {"title": "Search Result 2", "snippet": f"More details on {query}"}
-            ]
-        }
-        
-        # Find matching results
-        results = mock_results.get("default")
-        for keyword, data in mock_results.items():
-            if keyword in query.lower():
-                results = data
-                break
-        
-        return {
-            "query": query,
-            "results": results,
-            "total_results": len(results)
-        }
+        try:
+            import requests
+            from bs4 import BeautifulSoup
+            import urllib.parse
+            
+            # Use DuckDuckGo HTML search
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+            }
+            
+            search_url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(query)}"
+            response = requests.get(search_url, headers=headers, timeout=10)
+            
+            if response.status_code != 200:
+                return {
+                    "query": query,
+                    "results": [],
+                    "total_results": 0,
+                    "error": f"Search failed with status code: {response.status_code}"
+                }
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            search_results = soup.find_all('div', class_='result', limit=5)
+            
+            results = []
+            for result in search_results:
+                title_tag = result.find('a', class_='result__a')
+                snippet_tag = result.find('a', class_='result__snippet')
+                
+                title = title_tag.text.strip() if title_tag else 'No title'
+                snippet = snippet_tag.text.strip() if snippet_tag else 'No description'
+                
+                results.append({"title": title, "snippet": snippet})
+            
+            return {
+                "query": query,
+                "results": results,
+                "total_results": len(results)
+            }
+        except Exception as e:
+            logger.error(f"Search error: {e}")
+            return {
+                "query": query,
+                "results": [],
+                "total_results": 0,
+                "error": str(e)
+            }
     
     @staticmethod
     def calculator(expression: str) -> Dict[str, Any]:
@@ -197,6 +214,99 @@ class AgentTools:
             }
 
 
+    @staticmethod
+    def get_financial_data(symbol: str) -> Dict[str, Any]:
+        """
+        Get real-time stock, commodity, or cryptocurrency prices using Yahoo Finance
+        """
+        logger.info(f"💰 FINANCIAL DATA TOOL: Fetching data for '{symbol}'")
+        
+        try:
+            import yfinance as yf
+            from datetime import datetime
+            
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            
+            # Get current price
+            current_price = info.get('currentPrice') or info.get('regularMarketPrice') or info.get('previousClose')
+            if not current_price:
+                return {
+                    "symbol": symbol,
+                    "error": f"Could not fetch price for {symbol}",
+                    "success": False
+                }
+            
+            name = info.get('longName') or info.get('shortName') or symbol
+            currency = info.get('currency', 'USD')
+            
+            # Calculate change percentage
+            previous_close = info.get('previousClose', current_price)
+            if previous_close and previous_close != 0:
+                change_pct = ((current_price - previous_close) / previous_close) * 100
+            else:
+                change_pct = 0
+            
+            market_state = info.get('marketState', 'unknown')
+            
+            return {
+                "symbol": symbol,
+                "name": name,
+                "current_price": current_price,
+                "currency": currency,
+                "change_percent": round(change_pct, 2),
+                "market_state": market_state,
+                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                "success": True
+            }
+        except Exception as e:
+            logger.error(f"Financial data error: {e}")
+            return {
+                "symbol": symbol,
+                "error": str(e),
+                "success": False
+            }
+    
+    @staticmethod
+    def commodity_price(commodity: str) -> Dict[str, Any]:
+        """
+        Get current price for popular commodities (gold, silver, oil, etc.)
+        """
+        logger.info(f"💎 COMMODITY PRICE TOOL: Fetching price for '{commodity}'")
+        
+        # Map commodity names to Yahoo Finance symbols
+        commodity_symbols = {
+            'silver': 'SI=F',
+            'gold': 'GC=F',
+            'oil': 'CL=F',
+            'crude oil': 'CL=F',
+            'copper': 'HG=F',
+            'platinum': 'PL=F',
+            'palladium': 'PA=F',
+            'natural gas': 'NG=F',
+            'wheat': 'ZW=F',
+            'corn': 'ZC=F',
+            'soybeans': 'ZS=F'
+        }
+        
+        commodity_lower = commodity.lower().strip()
+        symbol = commodity_symbols.get(commodity_lower)
+        
+        if not symbol:
+            available = ', '.join(commodity_symbols.keys())
+            return {
+                "commodity": commodity,
+                "error": f"Unknown commodity. Available: {available}",
+                "success": False
+            }
+        
+        # Use get_financial_data to fetch the price
+        result = AgentTools.get_financial_data(symbol)
+        if result.get('success'):
+            result['commodity'] = commodity
+        return result
+
+
 # ============================================================================
 # COMPONENT 1: PLANNER
 # ============================================================================
@@ -236,15 +346,17 @@ class Planner:
             ("system", """You are a strategic planner for an AI agent. Your job is to break down user queries into clear, executable steps.
 
 Available tools:
-1. SEARCH: Search for information (use for: research, finding facts, getting current info)
-2. CALCULATOR: Perform mathematical calculations (use for: math operations, counting, computing)
-3. TEXT_ANALYZER: Analyze text content (use for: word count, text stats, readability analysis)
-4. NONE: No tool needed (use for: simple responses, greetings, clarifications)
+1. SEARCH: Search the web for real-time information (news, facts, current events)
+2. CALCULATOR: Perform mathematical calculations (math operations, counting, computing)
+3. TEXT_ANALYZER: Analyze text statistics (word count, readability, etc.)
+4. FINANCIAL_DATA: Get stock/crypto prices (use ticker symbols like AAPL, BTC-USD, SI=F)
+5. COMMODITY_PRICE: Get commodity prices (use names like silver, gold, oil, copper)
+6. NONE: No tool needed (use for: simple responses, greetings, clarifications)
 
 For each step, provide:
 - Step number
 - Description of what to do
-- Which tool to use (SEARCH, CALCULATOR, TEXT_ANALYZER, or NONE)
+- Which tool to use (SEARCH, CALCULATOR, TEXT_ANALYZER, FINANCIAL_DATA, COMMODITY_PRICE, or NONE)
 - What input to provide to the tool
 - Dependencies (which previous steps must complete first)
 
@@ -347,6 +459,8 @@ class ToolSelector:
             ToolType.SEARCH: AgentTools.search,
             ToolType.CALCULATOR: AgentTools.calculator,
             ToolType.TEXT_ANALYZER: AgentTools.text_analyzer,
+            ToolType.FINANCIAL_DATA: AgentTools.get_financial_data,
+            ToolType.COMMODITY_PRICE: AgentTools.commodity_price,
         }
         logger.info("✅ Tool Selector initialized")
     
