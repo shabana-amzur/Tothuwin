@@ -302,7 +302,12 @@ export default function SettingsPage() {
                       : `http://localhost:8001/${user.profile_picture}`}
                     alt="Profile"
                     className="w-24 h-24 rounded-full object-cover border-2 border-gray-700"
+                    onLoad={() => {
+                      console.log('✅ Profile picture loaded successfully!');
+                    }}
                     onError={(e) => {
+                      console.error('❌ Profile picture failed to load:', user.profile_picture);
+                      console.error('   Attempted URL:', e.currentTarget.src);
                       e.currentTarget.style.display = 'none';
                       if (e.currentTarget.nextElementSibling) {
                         (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
