@@ -54,6 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const userData = await response.json();
+        console.log('✅ Initial user data fetch from /api/auth/me:', userData);
+        console.log('   Profile picture:', userData.profile_picture);
         setUser(userData);
       } else {
         logout();
@@ -152,14 +154,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const fullUserData = await response.json();
+        console.log('✅ Fetched full user data from /api/auth/me:', fullUserData);
+        console.log('   Profile picture:', fullUserData.profile_picture);
         setUser(fullUserData);
       } else {
         // Fallback: use data from URL if backend fetch fails
-        console.warn('Failed to fetch user from backend, using OAuth data');
+        console.warn('❌ Failed to fetch user from backend, using OAuth data');
         setUser({ ...userData, id: 0, full_name: userData.username, role: 'user' } as User);
       }
     } catch (error) {
-      console.error('Failed to fetch user after OAuth login:', error);
+      console.error('❌ Failed to fetch user after OAuth login:', error);
       // Fallback to setting user from URL data
       setUser({ ...userData, id: 0, full_name: userData.username, role: 'user' } as User);
     }
