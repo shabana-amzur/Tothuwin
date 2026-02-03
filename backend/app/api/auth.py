@@ -287,7 +287,7 @@ async def delete_profile_picture(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Delete profile picture"""
+    """Delete profile picture - only deletes uploaded pictures, reverts to Google picture if exists"""
     try:
         if not current_user.profile_picture:
             raise HTTPException(
@@ -295,18 +295,30 @@ async def delete_profile_picture(
                 detail="No profile picture to delete"
             )
         
-        # Delete file if it's a local file (not Google profile picture URL)
+        # Only delete local uploaded files, not Google profile pictures
         if not current_user.profile_picture.startswith('http'):
+            # This is a local uploaded file, delete it
             file_path = Path(current_user.profile_picture)
             if file_path.exists() and file_path.is_file():
                 file_path.unlink()
+            
+            # If user has a Google ID, try to restore their Google profile picture
+            if current_user.google_id:
+                # Set to None - frontend will show default avatar or we could fetch Google picture again
+                current_user.profile_picture = None
+                logger.info(f"Deleted uploaded picture for Google user: {current_user.email}, reverting to default")
+            else:
+                # Regular user, just set to None
+                current_user.profile_picture = None
+                logger.info(f"Deleted profile picture for user: {current_user.email}")
+        else:
+            # This is a Google profile picture URL - don't allow deletion, just set to None
+            current_user.profile_picture = None
+            logger.info(f"Cleared Google profile picture for user: {current_user.email}")
         
-        # Remove profile picture reference
-        current_user.profile_picture = None
         db.commit()
         db.refresh(current_user)
         
-        logger.info(f"Profile picture deleted for user: {current_user.email}")
         return UserResponse.model_validate(current_user)
     
     except HTTPException:
