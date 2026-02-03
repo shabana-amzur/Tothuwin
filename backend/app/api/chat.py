@@ -375,19 +375,18 @@ async def get_chat_history(
     description="Send a message with an image for AI analysis"
 )
 async def chat_with_image(
-    message: str,
-    image: UploadFile,
-    thread_id: Optional[int] = None,
-    model: str = "gemini",
+    message: str = Form(...),
+    image: UploadFile = Form(...),
+    thread_id: Optional[int] = Form(None),
+    model: str = Form("gemini"),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """
     Chat with image - analyze images and answer questions
-    Only works with Gemini model (has vision capabilities)
+    Works with Gemini, Agent, and MCP Style models (all use Gemini Vision API)
     """
     try:
-        from fastapi import UploadFile, Form
         import base64
         from PIL import Image
         import io

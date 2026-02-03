@@ -291,6 +291,7 @@ class ChatService:
                     thread_id=thread_id,
                     message=f"🖼️ {user_message}",
                     response=response.content,
+                    model=settings.GEMINI_MODEL,
                     created_at=datetime.now()
                 )
                 db.add(chat_entry)
