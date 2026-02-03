@@ -34,11 +34,12 @@ export default function LoginPage() {
         <div>
           <div className="flex justify-center mb-4">
             <Image 
-              src="/parrot.png" 
+              src="/parrot.png?v=2" 
               alt="Tothu Logo" 
               width={80} 
               height={80}
               className="rounded-full"
+              unoptimized
             />
           </div>
           <h1 className="text-center text-4xl font-bold text-[#ec6438] mb-2">
@@ -113,7 +114,7 @@ export default function LoginPage() {
           <div className="mt-6">
             <a
               href="http://localhost:8001/api/auth/google/login"
-              className="group relative w-full flex justify-center items-center py-2 px-4 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ec6438]"
+              className="group relative w-full flex justify-center items-center py-2 px-4 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-green-500 dark:hover:bg-green-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ec6438]"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

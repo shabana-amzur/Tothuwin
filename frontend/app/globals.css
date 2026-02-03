@@ -17,8 +17,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-poppins);
+  --font-mono: var(--font-poppins);
 }
 
 /* Fix viewport height and prevent page scrolling */
@@ -36,11 +36,45 @@ body {
   width: 100%;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Force Poppins font family everywhere */
+* {
+  font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
 }
 
 /* Ensure root div takes full height */
 #__next {
   height: 100%;
   overflow: hidden;
+}
+
+/* Custom background color for login/register forms */
+.max-w-md.w-full.space-y-8.bg-white.dark\:bg-gray-800.p-8.rounded-xl.shadow-lg {
+  background: #252525 !important;
+}
+
+/* Google OAuth button styling */
+a.group.relative.w-full.flex.justify-center.items-center.py-2.px-4.border.border-gray-300.dark\:border-gray-600.text-sm.font-medium.rounded-md.text-gray-700.dark\:text-gray-300.bg-white.dark\:bg-gray-700.hover\:bg-green-500.dark\:hover\:bg-green-600.hover\:text-white.focus\:outline-none.focus\:ring-2.focus\:ring-offset-2.focus\:ring-\[\#ec6438\] {
+  background: #151515 !important;
+  border: none !important;
+  padding: 16px !important;
+  transition: all 0.3s ease;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Google OAuth button hover effect */
+a.group.relative.w-full.flex.justify-center.items-center.py-2.px-4.border.border-gray-300.dark\:border-gray-600.text-sm.font-medium.rounded-md.text-gray-700.dark\:text-gray-300.bg-white.dark\:bg-gray-700.hover\:bg-green-500.dark\:hover\:bg-green-600.hover\:text-white.focus\:outline-none.focus\:ring-2.focus\:ring-offset-2.focus\:ring-\[\#ec6438\]:hover {
+  background: white !important;
+  color: black !important;
+}
+
+/* Remove focus/active borders */
+a.group.relative.w-full.flex.justify-center.items-center.py-2.px-4.border.border-gray-300.dark\:border-gray-600.text-sm.font-medium.rounded-md.text-gray-700.dark\:text-gray-300.bg-white.dark\:bg-gray-700.hover\:bg-green-500.dark\:hover\:bg-green-600.hover\:text-white.focus\:outline-none.focus\:ring-2.focus\:ring-offset-2.focus\:ring-\[\#ec6438\]:focus,
+a.group.relative.w-full.flex.justify-center.items-center.py-2.px-4.border.border-gray-300.dark\:border-gray-600.text-sm.font-medium.rounded-md.text-gray-700.dark\:text-gray-300.bg-white.dark\:bg-gray-700.hover\:bg-green-500.dark\:hover\:bg-green-600.hover\:text-white.focus\:outline-none.focus\:ring-2.focus\:ring-offset-2.focus\:ring-\[\#ec6438\]:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
 }
