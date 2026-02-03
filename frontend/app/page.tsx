@@ -1191,7 +1191,6 @@ export default function Home() {
         </div>
         </>
         ) : (
-          /* Feature pages rendered directly */
           <div className="flex-1 overflow-hidden">
             {activeFeature === 'sql' && <NL2SQLPage />}
             {activeFeature === 'excel' && <ExcelPage />}
