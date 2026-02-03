@@ -22,6 +22,7 @@ interface AuthContextType {
   register: (data: any) => Promise<void>;
   logout: () => void;
   token: string | null;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -164,8 +165,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch('http://localhost:8001/api/auth/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  }, [token]);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, loginWithToken, register, logout, token }}>
+    <AuthContext.Provider value={{ user, isLoading, login, loginWithToken, register, logout, token, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

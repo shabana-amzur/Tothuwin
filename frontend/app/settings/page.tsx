@@ -16,7 +16,7 @@ interface UserProfile {
 }
 
 export default function SettingsPage() {
-  const { user, token } = useAuth();
+  const { user, token, refreshUser } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -77,7 +77,8 @@ export default function SettingsPage() {
       }
 
       setSuccessMessage('Profile updated successfully!');
-      // Update user context if needed
+      // Refresh user data in context
+      await refreshUser();
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
       setErrorMessage(error.message || 'Failed to update profile');
@@ -184,11 +185,9 @@ export default function SettingsPage() {
       }
 
       setSuccessMessage('Profile picture updated successfully!');
-      setTimeout(() => {
-        setSuccessMessage('');
-        // Reload page to show new profile picture
-        window.location.reload();
-      }, 1500);
+      // Refresh user data to show new picture
+      await refreshUser();
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
       setErrorMessage(error.message || 'Failed to upload profile picture');
       setTimeout(() => setErrorMessage(''), 5000);
@@ -221,11 +220,9 @@ export default function SettingsPage() {
       }
 
       setSuccessMessage('Profile picture deleted successfully!');
-      setTimeout(() => {
-        setSuccessMessage('');
-        // Reload page to show default avatar
-        window.location.reload();
-      }, 1500);
+      // Refresh user data to remove picture
+      await refreshUser();
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
       setErrorMessage(error.message || 'Failed to delete profile picture');
       setTimeout(() => setErrorMessage(''), 5000);
@@ -492,11 +489,11 @@ export default function SettingsPage() {
                 <div className="flex justify-between py-2">
                 <span className="text-gray-400">Member Since</span>
                 <span className="text-white">
-                  {new Date(user.created_at).toLocaleDateString('en-US', { 
+                  {user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { 
                     year: 'numeric', 
                     month: 'long', 
                     day: 'numeric' 
-                  })}
+                  }) : 'N/A'}
                 </span>
               </div>
               </div>
