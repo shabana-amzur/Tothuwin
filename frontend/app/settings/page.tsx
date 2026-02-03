@@ -79,7 +79,7 @@ export default function SettingsPage() {
       setSuccessMessage('Profile updated successfully!');
       // Refresh user data in context
       if (refreshUser) {
-        await refreshUser();
+        refreshUser().catch(err => console.error('Failed to refresh user:', err));
       }
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
@@ -189,7 +189,7 @@ export default function SettingsPage() {
       setSuccessMessage('Profile picture updated successfully!');
       // Refresh user data to show new picture
       if (refreshUser) {
-        await refreshUser();
+        refreshUser().catch(err => console.error('Failed to refresh user:', err));
       }
       // Reset file input
       if (fileInputRef.current) {
@@ -230,7 +230,7 @@ export default function SettingsPage() {
       setSuccessMessage('Profile picture deleted successfully!');
       // Refresh user data to remove picture
       if (refreshUser) {
-        await refreshUser();
+        refreshUser().catch(err => console.error('Failed to refresh user:', err));
       }
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
