@@ -98,10 +98,10 @@ load_dotenv()
 
 def calculator(expression: str) -> str:
     """
-    Performs basic math operations (addition and subtraction only).
+    Performs basic math operations (addition, subtraction, multiplication, division).
     
     Args:
-        expression: A simple math expression like "5+3" or "10-4"
+        expression: A simple math expression like "5+3", "10-4", "25*4", or "100/5"
     
     Returns:
         The result of the calculation
@@ -109,12 +109,14 @@ def calculator(expression: str) -> str:
     Examples:
         calculator("2+2") → "4"
         calculator("10-3") → "7"
+        calculator("25*4") → "100"
+        calculator("100/5") → "20.0"
     """
     try:
-        # Safety: Only allow numbers, +, -, and spaces
-        allowed_chars = set('0123456789+-. ')
+        # Safety: Allow numbers, +, -, *, /, and spaces
+        allowed_chars = set('0123456789+-*/. ()')
         if not all(c in allowed_chars for c in expression):
-            return "Error: Only use numbers, +, and - operators"
+            return "Error: Only use numbers and basic math operators (+, -, *, /)"
         
         # Evaluate the expression
         result = eval(expression)
@@ -788,7 +790,7 @@ def commodity_price(commodity: str) -> str:
 TOOLS = {
     "calculator": {
         "function": calculator,
-        "description": "Performs basic math (addition/subtraction). Input: expression like '5+3'"
+        "description": "Performs basic math (+, -, *, /). Input: expression like '5+3', '25*4', '100/5'"
     },
     "text_utility": {
         "function": text_utility,
@@ -903,7 +905,7 @@ def run_basic_agent(user_input: str) -> str:
 Thought → Action → Observation → Thought → ... → Final Answer
 
 Available Tools:
-- calculator: For math operations (addition/subtraction). Input: expression like "5+3"
+- calculator: For math operations (+, -, *, /). Input: expression like "5+3", "25*4", "100/5"
 - text_utility: For text operations. Input: JSON like {{"text": "hello", "operation": "reverse"}} or "count"
 - datetime_tool: Get current date/time. Input: operation "current", "date", or "time"
 - string_analyzer: Analyze text statistics. Input: any text string
