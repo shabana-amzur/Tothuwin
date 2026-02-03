@@ -3,7 +3,7 @@ Chat API Routes
 Handles all chat-related endpoints
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, Form
 from sqlalchemy.orm import Session
 from typing import Dict, List, Optional
 import logging
@@ -368,3 +368,72 @@ async def get_chat_history(
             detail="Failed to retrieve chat history"
         )
 
+
+@router.post(
+    "/chat/image",
+    summary="Chat with image",
+    description="Send a message with an image for AI analysis"
+)
+async def chat_with_image(
+    message: str,
+    image: UploadFile,
+    thread_id: Optional[int] = None,
+    model: str = "gemini",
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Chat with image - analyze images and answer questions
+    Only works with Gemini model (has vision capabilities)
+    """
+    try:
+        from fastapi import UploadFile, Form
+        import base64
+        from PIL import Image
+        import io
+        
+        logger.info(f"Image chat request from user {current_user.email}: {message}")
+        logger.info(f"Image: {image.filename}, Content-Type: {image.content_type}")
+        
+        # Only Gemini supports vision
+        if model != "gemini":
+            return {
+                "message": "⚠️ Image analysis is only available with the Gemini model. Please switch to 💬 Gemini to analyze images.",
+                "thread_id": thread_id,
+                "timestamp": None,
+                "model": model
+            }
+        
+        # Read and encode image
+        image_data = await image.read()
+        
+        # Convert to base64
+        image_base64 = base64.b64encode(image_data).decode('utf-8')
+        
+        # Determine image MIME type
+        mime_type = image.content_type or "image/jpeg"
+        
+        # Use chat service with vision
+        chat_service = get_chat_service()
+        result = await chat_service.get_chat_response_with_image(
+            user_message=message,
+            image_base64=image_base64,
+            mime_type=mime_type,
+            user_id=current_user.id,
+            thread_id=thread_id,
+            db=db
+        )
+        
+        return {
+            "message": result.get("message", ""),
+            "thread_id": result.get("thread_id"),
+            "timestamp": result.get("timestamp"),
+            "model": "Gemini Vision"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in image chat: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process image: {str(e)}"
+        )

@@ -222,6 +222,93 @@ class ChatService:
             logger.error(f"Error in get_chat_response: {str(e)}")
             raise Exception(f"Failed to get chat response: {str(e)}")
     
+    async def get_chat_response_with_image(
+        self,
+        user_message: str,
+        image_base64: str,
+        mime_type: str = "image/jpeg",
+        user_id: int = None,
+        thread_id: int = None,
+        db = None
+    ) -> Dict[str, str]:
+        """
+        Get response from Gemini Vision for image analysis
+        
+        Args:
+            user_message: The user's question about the image
+            image_base64: Base64 encoded image data
+            mime_type: MIME type of the image
+            user_id: User ID for saving to database
+            thread_id: Thread ID for conversation context
+            db: Database session
+        
+        Returns:
+            Dictionary with response message and metadata
+        """
+        try:
+            from langchain_core.messages import HumanMessage
+            
+            # Create a message with both text and image
+            message_content = [
+                {
+                    "type": "text",
+                    "text": user_message or "What's in this image? Provide detailed information including any text, objects, or medical information visible."
+                },
+                {
+                    "type": "image_url",
+                    "image_url": f"data:{mime_type};base64,{image_base64}"
+                }
+            ]
+            
+            message = HumanMessage(content=message_content)
+            
+            logger.info(f"Sending image analysis request to Gemini Vision")
+            response = await self.llm.ainvoke([message])
+            
+            logger.info("Successfully received image analysis from Gemini")
+            
+            # Save to database if db session provided
+            if db and user_id:
+                from app.models.database import ChatHistory, ChatThread
+                from datetime import datetime
+                
+                # Create or get thread
+                if not thread_id:
+                    new_thread = ChatThread(
+                        user_id=user_id,
+                        title="Image Analysis",
+                        created_at=datetime.now(),
+                        updated_at=datetime.now()
+                    )
+                    db.add(new_thread)
+                    db.commit()
+                    db.refresh(new_thread)
+                    thread_id = new_thread.id
+                
+                # Save chat history
+                chat_entry = ChatHistory(
+                    user_id=user_id,
+                    thread_id=thread_id,
+                    message=f"🖼️ {user_message}",
+                    response=response.content,
+                    created_at=datetime.now()
+                )
+                db.add(chat_entry)
+                db.commit()
+                
+                logger.info(f"Saved image chat to database for user {user_id}, thread {thread_id}")
+            
+            return {
+                "message": response.content,
+                "model": settings.GEMINI_MODEL + " (Vision)",
+                "timestamp": datetime.now().isoformat(),
+                "thread_id": thread_id
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in get_chat_response_with_image: {str(e)}")
+            raise Exception(f"Failed to analyze image: {str(e)}")
+    
     def get_model_info(self) -> Dict[str, str]:
         """Get information about the current model"""
         return {

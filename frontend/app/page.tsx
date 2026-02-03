@@ -306,6 +306,63 @@ export default function Home() {
       
       // Regular chat - Always route to backend chat API
       // Backend handles routing based on selected model
+      
+      // Check if there's an image attached
+      if (selectedFile && selectedFile.type.startsWith('image/')) {
+        // Send image with FormData
+        const formData = new FormData();
+        formData.append('message', userMessage.content);
+        formData.append('image', selectedFile);
+        if (currentThreadId) {
+          formData.append('thread_id', currentThreadId.toString());
+        }
+        formData.append('model', selectedModel);
+
+        const response = await fetch('http://localhost:8001/api/chat/image', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData,
+          signal: abortControllerRef.current.signal,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          if (response.status === 401) {
+            logout();
+            throw new Error('Session expired');
+          }
+          throw new Error(errorData.detail || 'Failed to get response');
+        }
+
+        const data = await response.json();
+        
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: data.message,
+          timestamp: data.timestamp,
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+        
+        // Clear the selected file
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        
+        if (data.thread_id) {
+          if (currentThreadId !== data.thread_id) {
+            console.log(`Setting thread ID to ${data.thread_id}`);
+            setCurrentThreadId(data.thread_id);
+            setRefreshThreads(prev => prev + 1);
+          }
+        }
+        return;
+      }
+      
+      // Regular text message
       const response = await fetch('http://localhost:8001/api/chat', {
         method: 'POST',
         headers: {
@@ -386,13 +443,18 @@ export default function Home() {
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
         'application/vnd.ms-excel', // .xls
-        'text/csv' // .csv
+        'text/csv', // .csv
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp'
       ];
       const fileExt = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-      const allowedExts = ['.pdf', '.txt', '.docx', '.xlsx', '.xls', '.xlsm', '.csv'];
+      const allowedExts = ['.pdf', '.txt', '.docx', '.xlsx', '.xls', '.xlsm', '.csv', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
       
       if (!allowedTypes.includes(file.type) && !allowedExts.includes(fileExt)) {
-        alert('Supported files: PDF, TXT, DOCX, XLSX, XLS, CSV (max 50MB)');
+        alert('Supported files: PDF, TXT, DOCX, XLSX, XLS, CSV, Images (JPG, PNG, GIF, WEBP) - max 50MB');
         return;
       }
       if (file.size > 50 * 1024 * 1024) {
@@ -405,6 +467,17 @@ export default function Home() {
 
   const uploadFile = async () => {
     if (!selectedFile) return;
+    
+    // For images, just keep them attached - they'll be sent with the next message
+    if (selectedFile.type.startsWith('image/')) {
+      const uploadMessage: Message = {
+        role: 'assistant',
+        content: `📷 **Image attached!** You can now ask questions about this image.\n\nFor example:\n- "What's in this image?"\n- "Describe this medicine"\n- "What are the side effects?"\n- "Read the text in this image"`,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, uploadMessage]);
+      return;
+    }
     
     setIsUploadingFile(true);
     
@@ -907,14 +980,30 @@ export default function Home() {
             
             {/* Selected file display */}
             {selectedFile && (
-              <div className="mb-3 flex items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
-                <div className="flex items-center space-x-2">
-                  <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-sm text-gray-300">{selectedFile.name}</span>
-                  <span className="text-xs text-gray-500">({(selectedFile.size / 1024).toFixed(1)} KB)</span>
-                </div>
+              <div className="mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
+                {selectedFile.type.startsWith('image/') && (
+                  <div className="mb-2">
+                    <img 
+                      src={URL.createObjectURL(selectedFile)} 
+                      alt="Preview" 
+                      className="max-h-32 rounded border border-gray-600"
+                    />
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    {selectedFile.type.startsWith('image/') ? (
+                      <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                    <span className="text-sm text-gray-300">{selectedFile.name}</span>
+                    <span className="text-xs text-gray-500">({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+                  </div>
                 <div className="flex space-x-2">
                   <button
                     type="button"
@@ -1045,7 +1134,7 @@ export default function Home() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.txt,.docx"
+                accept=".pdf,.txt,.docx,.jpg,.jpeg,.png,.gif,.webp,image/*"
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -1056,7 +1145,7 @@ export default function Home() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading || isUploadingFile}
                 className="bg-[#0f0f0f] hover:bg-[#252525] text-white p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Upload PDF, TXT, or DOCX"
+                title="Upload document or image"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
