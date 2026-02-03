@@ -46,6 +46,9 @@ export default function SettingsPage() {
       return;
     }
     
+    console.log('🔍 Settings page - Current user data:', user);
+    console.log('🔍 Settings page - Profile picture:', user.profile_picture);
+    
     // Initialize profile data
     setProfileData({
       username: user.username || '',
