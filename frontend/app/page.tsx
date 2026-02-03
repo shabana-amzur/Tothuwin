@@ -1189,7 +1189,7 @@ export default function Home() {
             </div>
           </form>
         </div>
-        </>
+          </>
         ) : (
           <div className="flex-1 overflow-hidden">
             {activeFeature === 'sql' && <NL2SQLPage />}
