@@ -394,11 +394,21 @@ async def chat_with_image(
         
         logger.info(f"Image chat request from user {current_user.email}: {message}")
         logger.info(f"Image: {image.filename}, Content-Type: {image.content_type}")
+        logger.info(f"Selected model: {model}")
         
-        # Only Gemini supports vision
-        if model != "gemini":
+        # All models can now use Gemini Vision for image analysis
+        # (Gemini, Agent, MCP Style all support images via Gemini Vision API)
+        model_display_name = {
+            "gemini": "Gemini Vision",
+            "agent": "Agent (Gemini Vision)",
+            "mcp-style": "MCP Style Agent (Gemini Vision)",
+            "n8n": "N8N"
+        }.get(model, "Gemini Vision")
+        
+        # N8N doesn't support vision yet
+        if model == "n8n":
             return {
-                "message": "⚠️ Image analysis is only available with the Gemini model. Please switch to 💬 Gemini to analyze images.",
+                "message": "⚠️ Image analysis is not available with N8N model. Please switch to 💬 Gemini, 🤖 Agent, or 🔧 MCP Style Agent to analyze images.",
                 "thread_id": thread_id,
                 "timestamp": None,
                 "model": model
@@ -428,7 +438,7 @@ async def chat_with_image(
             "message": result.get("message", ""),
             "thread_id": result.get("thread_id"),
             "timestamp": result.get("timestamp"),
-            "model": "Gemini Vision"
+            "model": model_display_name
         }
         
     except Exception as e:
