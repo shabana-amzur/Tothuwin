@@ -1191,15 +1191,15 @@ export default function Home() {
         </div>
       </>
     ) : (
-          <div className="flex-1 overflow-hidden">
-            {activeFeature === 'sql' && <NL2SQLPage />}
-            {activeFeature === 'excel' && <ExcelPage />}
-            {activeFeature === 'game' && <TicTacToePage />}
-            {activeFeature === 'game' && <TicTacToePage />}
-            {activeFeature === 'image' && (
-              <div className="h-full overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                  <div className="bg-[#181818] rounded-lg p-6">
+      <div className="flex-1 overflow-hidden">
+        {activeFeature === 'sql' && <NL2SQLPage />}
+        {activeFeature === 'excel' && <ExcelPage />}
+        {activeFeature === 'game' && <TicTacToePage />}
+        {activeFeature === 'game' && <TicTacToePage />}
+        {activeFeature === 'image' && (
+          <div className="h-full overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <div className="bg-[#181818] rounded-lg p-6">
                     <h2 className="text-2xl font-bold text-white mb-6">🖼️ Image Validation</h2>
                     
                     {/* Demo mode toggle */}
@@ -1316,12 +1316,12 @@ export default function Home() {
                         <li>• Results will appear in the chat</li>
                       </ul>
                     </div>
-                  </div>
-                </div>
               </div>
-            )}
-        </div>
-      )}
+            </div>
+          </div>
+        )}
+      </div>
+    )}
     </div>
   </div>
   );
