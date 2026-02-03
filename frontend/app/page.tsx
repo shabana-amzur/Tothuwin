@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from './contexts/AuthContext';
@@ -28,7 +28,7 @@ interface ThreadSidebarProps {
   refreshTrigger?: number;
 }
 
-export default function Home() {
+function HomeContent() {
   const { user, token, logout, isLoading: authLoading, loginWithToken } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
@@ -1324,5 +1324,13 @@ export default function Home() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
