@@ -17,6 +17,35 @@ interface MarkdownRendererProps {
 export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
     <div className="prose prose-invert max-w-none markdown-content overflow-x-auto">
+      <style jsx global>{`
+        .markdown-content {
+          font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          font-size: 15px;
+          line-height: 1.8;
+          color: #e5e5e5;
+        }
+        .markdown-content strong {
+          font-weight: 600;
+          color: #f0f0f0;
+        }
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+          font-weight: 600;
+          letter-spacing: -0.01em;
+        }
+        .markdown-content ul, .markdown-content ol {
+          padding-left: 1.5rem;
+        }
+        .markdown-content li {
+          margin-top: 0.6rem;
+          margin-bottom: 0.6rem;
+          line-height: 1.75;
+        }
+        .markdown-content p {
+          margin-top: 1.25rem;
+          margin-bottom: 1.25rem;
+          line-height: 1.8;
+        }
+      `}</style>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex, rehypeRaw]}
@@ -63,7 +92,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
             
             if (inline) {
               return (
-                <code className="bg-gray-800 px-2 py-1 rounded text-sm font-mono text-blue-300" {...props}>
+                <code className="bg-gray-800/70 px-1.5 py-0.5 rounded text-sm font-mono text-blue-300" {...props}>
                   {children}
                 </code>
               );
@@ -71,7 +100,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
             
             return (
               <div className="my-4 rounded-lg overflow-x-auto overflow-hidden">
-                <div className="bg-gray-900 px-4 py-2 text-xs text-gray-400 border-b border-gray-700">
+                <div className="bg-gray-900 px-4 py-2 text-xs text-gray-400 border-b border-gray-700 font-mono">
                   {language || 'code'}
                 </div>
                 <SyntaxHighlighter
@@ -91,35 +120,41 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
           a: ({ node, ...props }) => (
             <a
               {...props}
-              className="text-blue-400 hover:text-blue-300 underline"
+              className="text-blue-400 hover:text-blue-300 underline transition-colors"
               target="_blank"
               rel="noopener noreferrer"
             />
           ),
           // Custom rendering for blockquotes
           blockquote: ({ node, ...props }) => (
-            <blockquote className="border-l-4 border-gray-600 pl-4 italic my-4" {...props} />
+            <blockquote className="border-l-4 border-blue-500/50 pl-4 py-1 italic my-3 text-gray-300" {...props} />
           ),
-          // Custom rendering for lists
+          // Custom rendering for lists - better spacing like ChatGPT
           ul: ({ node, ...props }) => (
-            <ul className="list-disc list-inside my-4" {...props} />
+            <ul className="space-y-2 my-3" {...props} />
           ),
           ol: ({ node, ...props }) => (
-            <ol className="list-decimal list-inside my-4" {...props} />
+            <ol className="space-y-2 my-3" {...props} />
           ),
-          // Headings
+          li: ({ node, ...props }) => (
+            <li className="leading-relaxed" {...props} />
+          ),
+          // Headings - cleaner, more ChatGPT-like
           h1: ({ node, ...props }) => (
-            <h1 className="text-3xl font-bold mt-6 mb-4" {...props} />
+            <h1 className="text-2xl font-semibold mt-6 mb-3 text-white" {...props} />
           ),
           h2: ({ node, ...props }) => (
-            <h2 className="text-2xl font-bold mt-5 mb-3" {...props} />
+            <h2 className="text-xl font-semibold mt-5 mb-2.5 text-white" {...props} />
           ),
           h3: ({ node, ...props }) => (
-            <h3 className="text-xl font-bold mt-4 mb-2" {...props} />
+            <h3 className="text-lg font-semibold mt-4 mb-2 text-white" {...props} />
           ),
-          // Paragraphs - using div to prevent hydration errors with nested block elements
+          h4: ({ node, ...props }) => (
+            <h4 className="text-base font-semibold mt-3 mb-1.5 text-white" {...props} />
+          ),
+          // Paragraphs - better spacing
           p: ({ node, ...props }) => (
-            <div className="my-2 leading-relaxed" {...props} />
+            <p className="mb-4 leading-relaxed text-gray-200" {...props} />
           ),
         }}
       >

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
-const poppins = Poppins({
+const inter = Inter({
   weight: ['300', '400', '500', '600', '700'],
-  variable: "--font-poppins",
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -44,7 +44,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${poppins.variable} antialiased h-full`}
+        className={`${inter.variable} antialiased h-full`}
       >
         <ThemeProvider>
           <AuthProvider>
