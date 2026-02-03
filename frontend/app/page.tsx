@@ -1186,11 +1186,11 @@ export default function Home() {
               >
                 Send
               </button>
-                </div>
-              </form>
             </div>
-          </>
-        ) : (
+          </form>
+        </div>
+      </>
+    ) : (
           <div className="flex-1 overflow-hidden">
             {activeFeature === 'sql' && <NL2SQLPage />}
             {activeFeature === 'excel' && <ExcelPage />}
@@ -1320,9 +1320,9 @@ export default function Home() {
                 </div>
               </div>
             )}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
+  </div>
   );
 }
