@@ -1,10 +1,7 @@
 """
-Tic-Tac-Toe game with AI using Langchain and Gemini
+Tic-Tac-Toe game with AI using strategic logic
 """
 from typing import List, Optional
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import SystemMessage, HumanMessage
-import os
 
 
 class TicTacToeGame:
@@ -96,17 +93,7 @@ class TicTacToeAgent:
     
     def __init__(self):
         self.game = TicTacToeGame()
-        
-        # Initialize Gemini model (optional - for future enhancements)
-        api_key = os.getenv("GEMINI_API_KEY")
-        try:
-            self.llm = ChatGoogleGenerativeAI(
-                model="gemini-2.0-flash-exp",
-                google_api_key=api_key,
-                temperature=0.3
-            )
-        except:
-            self.llm = None
+        # Note: LLM removed for faster game loading - using pure strategic logic instead
     
     def reset_game(self):
         """Reset the game"""
