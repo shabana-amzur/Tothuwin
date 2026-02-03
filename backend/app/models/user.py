@@ -28,8 +28,15 @@ class UserLogin(BaseModel):
 
 class UserUpdate(BaseModel):
     """Schema for user updates"""
-    full_name: Optional[str] = None
+    full_name: Optional[str] = Field(None, min_length=1, max_length=255)
     email: Optional[EmailStr] = None
+    username: Optional[str] = Field(None, min_length=3, max_length=100)
+
+
+class PasswordChange(BaseModel):
+    """Schema for password change"""
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8, max_length=100)
 
 
 class UserInDB(UserBase):

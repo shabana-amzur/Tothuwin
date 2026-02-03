@@ -847,6 +847,12 @@ function HomeContent() {
               {user.full_name || user.username}
             </span>
             <button 
+              onClick={() => router.push('/settings')}
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-[#ec6438] dark:hover:text-[#ec6438] font-medium transition-colors"
+            >
+              Settings
+            </button>
+            <button 
               onClick={logout}
               className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium transition-colors"
             >
