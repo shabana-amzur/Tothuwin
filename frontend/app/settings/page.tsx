@@ -239,9 +239,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="h-screen flex flex-col bg-[#0a0a0a] text-white overflow-hidden">
       {/* Header */}
-      <div className="border-b border-gray-800 bg-[#1a1a1a]">
+      <div className="bg-[#181818]">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -258,25 +258,26 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Success/Error Messages */}
-        {successMessage && (
-          <div className="mb-6 bg-green-500/10 border border-green-500/50 rounded-lg p-4 flex items-center gap-3">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto px-6 py-8">
+          {/* Success/Error Messages */}
+          {successMessage && (
+            <div className="mb-6 bg-green-500/10 rounded-lg p-4 flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-green-500" />
             <p className="text-green-500">{successMessage}</p>
           </div>
         )}
         
-        {errorMessage && (
-          <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-center gap-3">
+          {errorMessage && (
+            <div className="mb-6 bg-red-500/10 rounded-lg p-4 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500" />
             <p className="text-red-500">{errorMessage}</p>
           </div>
         )}
 
-        <div className="grid gap-8">
-          {/* Profile Picture */}
-          <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 p-6">
+          <div className="grid gap-6">
+            {/* Profile Picture */}
+            <div className="bg-[#181818] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <Camera className="w-5 h-5 text-[#ec6438]" />
               <h2 className="text-xl font-semibold">Profile Picture</h2>
@@ -342,8 +343,8 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Profile Information */}
-          <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 p-6">
+            {/* Profile Information */}
+            <div className="bg-[#181818] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <User className="w-5 h-5 text-[#ec6438]" />
               <h2 className="text-xl font-semibold">Profile Information</h2>
@@ -407,8 +408,8 @@ export default function SettingsPage() {
             </form>
           </div>
 
-          {/* Change Password */}
-          <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 p-6">
+            {/* Change Password */}
+            <div className="bg-[#181818] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <Lock className="w-5 h-5 text-[#ec6438]" />
               <h2 className="text-xl font-semibold">Change Password</h2>
@@ -470,25 +471,25 @@ export default function SettingsPage() {
             </form>
           </div>
 
-          {/* Account Information */}
-          <div className="bg-[#1a1a1a] rounded-xl border border-gray-800 p-6">
+            {/* Account Information */}
+            <div className="bg-[#181818] rounded-xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <Mail className="w-5 h-5 text-[#ec6438]" />
               <h2 className="text-xl font-semibold">Account Information</h2>
             </div>
             
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between py-2 border-b border-gray-800">
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between py-2 border-b border-gray-900">
                 <span className="text-gray-400">Account Status</span>
                 <span className={user.is_active ? 'text-green-500' : 'text-red-500'}>
                   {user.is_active ? 'Active' : 'Inactive'}
                 </span>
               </div>
-              <div className="flex justify-between py-2 border-b border-gray-800">
+              <div className="flex justify-between py-2 border-b border-gray-900">
                 <span className="text-gray-400">Role</span>
                 <span className="text-white capitalize">{user.role}</span>
               </div>
-              <div className="flex justify-between py-2">
+                <div className="flex justify-between py-2">
                 <span className="text-gray-400">Member Since</span>
                 <span className="text-white">
                   {new Date(user.created_at).toLocaleDateString('en-US', { 
@@ -497,6 +498,7 @@ export default function SettingsPage() {
                     day: 'numeric' 
                   })}
                 </span>
+              </div>
               </div>
             </div>
           </div>
