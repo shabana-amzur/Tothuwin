@@ -50,8 +50,6 @@ function HomeContent() {
   
   // File upload state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const [imageUploaded, setImageUploaded] = useState(false); // Track if image has been uploaded and is ready to send
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedExcelId, setUploadedExcelId] = useState<number | null>(null);
   const [excelFileName, setExcelFileName] = useState<string>('');
@@ -347,9 +345,8 @@ function HomeContent() {
 
         setMessages(prev => [...prev, assistantMessage]);
         
-        // Clear the selected file and uploaded state
+        // Clear the selected file
         setSelectedFile(null);
-        setImageUploaded(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -470,34 +467,10 @@ function HomeContent() {
   const uploadFile = async () => {
     if (!selectedFile) return;
     
-    // For images, show them in the chat and keep them attached for the next message
+    // For images, they will be sent directly with the message - no separate upload
     if (selectedFile.type.startsWith('image/')) {
-      // Create image URL for display
-      const imageUrl = URL.createObjectURL(selectedFile);
-      
-      // Show user message with image
-      const userImageMessage: Message = {
-        role: 'user',
-        content: `📷 Uploaded image: ${selectedFile.name}`,
-        timestamp: new Date().toISOString(),
-        image_url: imageUrl,
-        is_image: true,
-      };
-      
-      // Show assistant's help message
-      const uploadMessage: Message = {
-        role: 'assistant',
-        content: `📷 **Image attached!** You can now ask questions about this image.\n\nFor example:\n- "What's in this image?"\n- "Describe this medicine"\n- "What are the side effects?"\n- "Read the text in this image"`,
-        timestamp: new Date().toISOString(),
-      };
-      
-      setMessages(prev => [...prev, userImageMessage, uploadMessage]);
-      // Mark image as uploaded so we hide the upload UI but keep the file
-      setImageUploaded(true);
-      return;
+      return; // Images don't need separate upload, just attach and send with message
     }
-    
-    setIsUploadingFile(true);
     
     try {
       // Check if it's an Excel file
@@ -618,7 +591,6 @@ function HomeContent() {
 
   const removeSelectedFile = () => {
     setSelectedFile(null);
-    setImageUploaded(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -1009,8 +981,8 @@ function HomeContent() {
                   </div>
                 )}
                 
-                {/* Selected file display - only show if file is selected but not yet uploaded */}
-                {selectedFile && !imageUploaded && (
+                {/* Selected file display */}
+                {selectedFile && (
                   <div className="mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
                     {selectedFile.type.startsWith('image/') && (
                       <div className="mb-2">
@@ -1036,14 +1008,16 @@ function HomeContent() {
                         <span className="text-xs text-gray-500">({(selectedFile.size / 1024).toFixed(1)} KB)</span>
                       </div>
                       <div className="flex space-x-2">
-                        <button
-                          type="button"
-                          onClick={uploadFile}
-                          disabled={isUploadingFile}
-                          className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded disabled:opacity-50"
-                        >
-                          {isUploadingFile ? 'Uploading...' : 'Upload'}
-                        </button>
+                        {/* Only show Upload button for non-image files (documents/Excel) */}
+                        {!selectedFile.type.startsWith('image/') && (
+                          <button
+                            type="button"
+                            onClick={uploadFile}
+                            className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
+                          >
+                            Upload
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={removeSelectedFile}
@@ -1053,26 +1027,6 @@ function HomeContent() {
                         </button>
                       </div>
                     </div>
-                  </div>
-                )}
-                
-                {/* Image ready indicator - show when image is uploaded and ready to send */}
-                {imageUploaded && selectedFile && (
-                  <div className="mb-3 bg-green-900/30 border border-green-700 rounded-lg px-4 py-2 flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-sm text-green-400">📷 Image ready - Type your question below</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={removeSelectedFile}
-                      className="text-sm text-gray-400 hover:text-white"
-                      title="Remove image"
-                    >
-                      ✕
-                    </button>
                   </div>
                 )}
                 
@@ -1195,7 +1149,7 @@ function HomeContent() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={isLoading || isUploadingFile}
+                    disabled={isLoading}
                     className="bg-[#0f0f0f] hover:bg-[#252525] text-white p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Upload document or image"
                   >
