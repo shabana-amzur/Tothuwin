@@ -78,7 +78,9 @@ export default function SettingsPage() {
 
       setSuccessMessage('Profile updated successfully!');
       // Refresh user data in context
-      await refreshUser();
+      if (refreshUser) {
+        await refreshUser();
+      }
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
       setErrorMessage(error.message || 'Failed to update profile');
@@ -186,7 +188,13 @@ export default function SettingsPage() {
 
       setSuccessMessage('Profile picture updated successfully!');
       // Refresh user data to show new picture
-      await refreshUser();
+      if (refreshUser) {
+        await refreshUser();
+      }
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
       setErrorMessage(error.message || 'Failed to upload profile picture');
@@ -221,7 +229,9 @@ export default function SettingsPage() {
 
       setSuccessMessage('Profile picture deleted successfully!');
       // Refresh user data to remove picture
-      await refreshUser();
+      if (refreshUser) {
+        await refreshUser();
+      }
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
       setErrorMessage(error.message || 'Failed to delete profile picture');
