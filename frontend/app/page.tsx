@@ -51,6 +51,7 @@ function HomeContent() {
   // File upload state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [imageUploaded, setImageUploaded] = useState(false); // Track if image has been uploaded and is ready to send
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedExcelId, setUploadedExcelId] = useState<number | null>(null);
   const [excelFileName, setExcelFileName] = useState<string>('');
@@ -346,8 +347,9 @@ function HomeContent() {
 
         setMessages(prev => [...prev, assistantMessage]);
         
-        // Clear the selected file
+        // Clear the selected file and uploaded state
         setSelectedFile(null);
+        setImageUploaded(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -490,7 +492,8 @@ function HomeContent() {
       };
       
       setMessages(prev => [...prev, userImageMessage, uploadMessage]);
-      // Don't clear selectedFile - keep it for sending with the next message
+      // Mark image as uploaded so we hide the upload UI but keep the file
+      setImageUploaded(true);
       return;
     }
     
@@ -615,6 +618,7 @@ function HomeContent() {
 
   const removeSelectedFile = () => {
     setSelectedFile(null);
+    setImageUploaded(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -1005,8 +1009,8 @@ function HomeContent() {
                   </div>
                 )}
                 
-                {/* Selected file display */}
-                {selectedFile && (
+                {/* Selected file display - only show if file is selected but not yet uploaded */}
+                {selectedFile && !imageUploaded && (
                   <div className="mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
                     {selectedFile.type.startsWith('image/') && (
                       <div className="mb-2">
@@ -1049,6 +1053,26 @@ function HomeContent() {
                         </button>
                       </div>
                     </div>
+                  </div>
+                )}
+                
+                {/* Image ready indicator - show when image is uploaded and ready to send */}
+                {imageUploaded && selectedFile && (
+                  <div className="mb-3 bg-green-900/30 border border-green-700 rounded-lg px-4 py-2 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm text-green-400">📷 Image ready - Type your question below</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeSelectedFile}
+                      className="text-sm text-gray-400 hover:text-white"
+                      title="Remove image"
+                    >
+                      ✕
+                    </button>
                   </div>
                 )}
                 
