@@ -16,7 +16,7 @@ interface UserProfile {
 }
 
 export default function SettingsPage() {
-  const { user, token, refreshUser } = useAuth();
+  const { user, token, refreshUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -46,6 +46,11 @@ export default function SettingsPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
+    // Don't redirect while still loading auth state
+    if (authLoading) {
+      return;
+    }
+    
     if (!user) {
       router.push('/login');
       return;
@@ -60,7 +65,7 @@ export default function SettingsPage() {
       email: user.email || '',
       full_name: user.full_name || '',
     });
-  }, [user, router]);
+  }, [user, router, authLoading]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,7 +278,13 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      {/* Show loading while checking auth */}
+      {authLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-gray-400">Loading...</div>
+        </div>
+      ) : !user ? null : (
+        <>      <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-6 py-8">
           {/* Success/Error Messages */}
           {successMessage && (
@@ -554,6 +565,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
