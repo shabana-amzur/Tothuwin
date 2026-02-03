@@ -600,8 +600,6 @@ function HomeContent() {
         timestamp: new Date().toISOString(),
       };
       setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsUploadingFile(false);
     }
   };
 

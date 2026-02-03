@@ -284,7 +284,7 @@ export default function SettingsPage() {
           <div className="text-gray-400">Loading...</div>
         </div>
       ) : !user ? null : (
-        <>      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-6 py-8">
           {/* Success/Error Messages */}
           {successMessage && (
