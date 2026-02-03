@@ -859,9 +859,9 @@ export default function Home() {
         {/* Content Area - Conditional Rendering */}
         {activeFeature === 'chat' ? (
           <>
-        {/* Messages Container */}
-        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 scroll-smooth">
-          <div className="max-w-4xl mx-auto space-y-4">
+            {/* Messages Container */}
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 scroll-smooth">
+              <div className="max-w-4xl mx-auto space-y-4">
             {messages.length === 0 ? (
               <div className="text-center text-gray-500 dark:text-gray-400 mt-20">
                 <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
@@ -946,12 +946,12 @@ export default function Home() {
             )}
             
             <div ref={messagesEndRef} />
-          </div>
-        </div>
+              </div>
+            </div>
 
-        {/* Input Area */}
-        <div className="bg-white dark:bg-[#212121] px-4 py-4 shadow-lg flex-shrink-0">
-          <form onSubmit={sendMessage} className="max-w-4xl mx-auto">
+            {/* Input Area */}
+            <div className="bg-white dark:bg-[#212121] px-4 py-4 shadow-lg flex-shrink-0">
+              <form onSubmit={sendMessage} className="max-w-4xl mx-auto">
             {/* Excel file active indicator */}
             {uploadedExcelId && excelFileName && (
               <div className="mb-3 flex items-center justify-between bg-green-900 bg-opacity-30 rounded-lg px-4 py-2">
@@ -1186,12 +1186,12 @@ export default function Home() {
               >
                 Send
               </button>
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
-        </>
-      ) : (
-        <div className="flex-1 overflow-hidden">
+          </>
+        ) : (
+          <div className="flex-1 overflow-hidden">
             {activeFeature === 'sql' && <NL2SQLPage />}
             {activeFeature === 'excel' && <ExcelPage />}
             {activeFeature === 'game' && <TicTacToePage />}
@@ -1320,9 +1320,9 @@ export default function Home() {
                 </div>
               </div>
             )}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
