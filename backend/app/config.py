@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     GOOGLE_GEMINI_API_KEY: str
     OPENAI_API_KEY: str = ""
     
+    # Google Cloud / Vertex AI Configuration
+    GOOGLE_CLOUD_PROJECT: str = ""
+    GOOGLE_CLOUD_LOCATION: str = "us-central1"
+    GOOGLE_APPLICATION_CREDENTIALS: str = ""
+    
     # OpenAI Configuration
     OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-large"
     

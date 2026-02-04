@@ -1,44 +1,69 @@
 """
-Image Generation Service - Google Gemini 2.0 Image Generation
-Handles image generation using Google's Imagen 3 model via Gemini API
+Image Generation Service - Vertex AI Imagen 3
+Handles image generation using Google's Vertex AI Imagen 3 model
 """
 
-import google.generativeai as genai
-import base64
 import logging
-from typing import Dict, List
+from typing import Dict
 from datetime import datetime
-import os
 from pathlib import Path
 import uuid
-import aiohttp
-from PIL import Image
-import io
+from PIL import Image, ImageDraw, ImageFont
 
 from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# Configure Gemini API
-genai.configure(api_key=settings.GOOGLE_GEMINI_API_KEY)
-
 
 class ImageService:
     """
-    Service for generating images using Google Gemini Imagen 3
+    Service for generating images using Vertex AI Imagen 3
     """
     
     def __init__(self):
         """Initialize the image generation service"""
-        try:
-            # Try to use Imagen 3 through the Google AI API
-            self.imagen_model = genai.ImageGenerationModel("imagen-3.0-generate-001")
-            self.use_imagen = True
-            logger.info("ImageService initialized with Imagen 3.0")
-        except Exception as e:
-            logger.warning(f"Imagen 3.0 not available: {e}. Will use fallback service.")
-            self.use_imagen = False
+        from app.config import get_settings
+        settings = get_settings()
+        
+        # Check if Vertex AI is configured
+        self.google_cloud_project = settings.GOOGLE_CLOUD_PROJECT
+        self.google_cloud_location = settings.GOOGLE_CLOUD_LOCATION
+        self.use_imagen = bool(self.google_cloud_project and len(self.google_cloud_project) > 3)
+        
+        if self.use_imagen:
+            try:
+                import vertexai
+                from vertexai.preview.vision_models import ImageGenerationModel
+                from google.oauth2 import service_account
+                import os
+                
+                # Load service account credentials
+                credentials = None
+                if hasattr(settings, 'GOOGLE_APPLICATION_CREDENTIALS') and settings.GOOGLE_APPLICATION_CREDENTIALS:
+                    creds_path = settings.GOOGLE_APPLICATION_CREDENTIALS
+                    
+                    if os.path.exists(creds_path):
+                        credentials = service_account.Credentials.from_service_account_file(creds_path)
+                        logger.info(f"📝 Loaded service account from: {creds_path}")
+                    else:
+                        logger.warning(f"⚠️ Service account file not found: {creds_path}")
+                
+                # Initialize Vertex AI
+                vertexai.init(
+                    project=self.google_cloud_project, 
+                    location=self.google_cloud_location,
+                    credentials=credentials
+                )
+                # Use the latest Imagen 3 model (imagegeneration@006 is deprecated)
+                self.imagen_model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
+                logger.info(f"✅ ImageService initialized with Vertex AI Imagen 3 (Project: {self.google_cloud_project})")
+            except Exception as e:
+                logger.warning(f"⚠️ Vertex AI Imagen initialization failed: {str(e)}")
+                self.use_imagen = False
+        
+        if not self.use_imagen:
+            logger.warning("⚠️ Vertex AI not configured - only placeholder images will be available")
             
         self.image_dir = Path("uploads/generated_images")
         self.image_dir.mkdir(parents=True, exist_ok=True)
@@ -49,7 +74,7 @@ class ImageService:
         user_id: int = None
     ) -> Dict[str, str]:
         """
-        Generate an image from text prompt using Imagen 3 or fallback service
+        Generate an image from text prompt using Vertex AI Imagen 3
         
         Args:
             prompt: The text description for image generation
@@ -61,33 +86,26 @@ class ImageService:
         try:
             logger.info(f"Generating image: {prompt[:50]}...")
             
+            # Try Vertex AI Imagen
             if self.use_imagen:
-                # Try using Imagen 3
-                return await self._generate_with_imagen(prompt)
+                try:
+                    return await self._generate_with_imagen(prompt)
+                except Exception as imagen_error:
+                    logger.error(f"Vertex AI Imagen failed: {str(imagen_error)}")
+                    # Fall back to placeholder
+                    return await self._generate_placeholder(prompt, error=str(imagen_error))
             else:
-                # Use fallback service (Pollinations AI - free, no API key needed)
-                return await self._generate_with_pollinations(prompt)
+                # Vertex AI not configured
+                return await self._generate_placeholder(prompt, error="Vertex AI not configured")
             
         except Exception as e:
             logger.error(f"Error in image generation: {str(e)}")
-            
-            # If Imagen failed, try fallback
-            if self.use_imagen:
-                logger.info("Falling back to Pollinations AI...")
-                try:
-                    return await self._generate_with_pollinations(prompt)
-                except Exception as fallback_error:
-                    logger.error(f"Fallback also failed: {fallback_error}")
-            
-            return {
-                "success": False,
-                "error": str(e),
-                "message": f"❌ I encountered an error while generating your image.\n\n**Your request:** {prompt}\n\n**Error:** {str(e)}\n\nPlease try again with a different prompt.",
-                "timestamp": datetime.now().isoformat()
-            }
+            return await self._generate_placeholder(prompt, error=str(e))
     
     async def _generate_with_imagen(self, prompt: str) -> Dict[str, str]:
-        """Generate image using Google Imagen 3"""
+        """Generate image using Vertex AI Imagen 3"""
+        logger.info("🎨 Generating with Vertex AI Imagen 3...")
+        
         result = self.imagen_model.generate_images(
             prompt=prompt,
             number_of_images=1,
@@ -102,60 +120,86 @@ class ImageService:
             image_path = self.image_dir / image_filename
             image._pil_image.save(str(image_path))
             
-            logger.info(f"Image generated with Imagen 3: {image_filename}")
+            logger.info(f"✅ Image generated with Vertex AI Imagen 3: {image_filename}")
             image_url = f"/uploads/generated_images/{image_filename}"
             
             return {
                 "success": True,
                 "image_url": image_url,
-                "message": f"🎨 Image generated successfully with Google Imagen 3!\n\n**Prompt:** {prompt}",
+                "message": f"🎨 Image generated successfully with **Vertex AI Imagen 3**!\n\n**Prompt:** {prompt}\n\n**Model:** Google Imagen 3 (High Quality)\n**Powered by:** Your Google Cloud Credits",
                 "is_image": True,
-                "model": "imagen-3.0",
+                "model": "vertex-ai-imagen-3",
                 "original_request": prompt,
                 "timestamp": datetime.now().isoformat()
             }
         else:
-            raise Exception("No image was generated by Imagen")
+            raise Exception("No image was generated by Vertex AI Imagen")
     
-    async def _generate_with_pollinations(self, prompt: str) -> Dict[str, str]:
-        """Generate image using Pollinations AI (free fallback)"""
-        # Pollinations AI API - free, no API key needed
-        # https://pollinations.ai/
-        import urllib.parse
-        encoded_prompt = urllib.parse.quote(prompt)
+    async def _generate_placeholder(self, prompt: str, error: str = None) -> Dict[str, str]:
+        """Generate a placeholder image when Vertex AI is unavailable"""
+        logger.info("🎨 Generating placeholder image...")
         
-        # Use their API to generate image
-        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
+        # Create gradient image
+        width, height = 1024, 1024
+        img = Image.new('RGB', (width, height), color=(30, 30, 40))
+        draw = ImageDraw.Draw(img)
         
-        logger.info(f"Generating image with Pollinations AI...")
+        # Draw gradient concentric circles
+        colors = [(255, 107, 107), (255, 159, 64), (255, 206, 84), (75, 192, 192), (54, 162, 235)]
+        for i in range(10):
+            radius = width // 2 - (i * 50)
+            if radius > 0:
+                color = colors[i % len(colors)]
+                alpha = 255 - (i * 20)
+                draw.ellipse(
+                    [(width//2 - radius, height//2 - radius), 
+                     (width//2 + radius, height//2 + radius)],
+                    outline=color + (alpha,),
+                    width=3
+                )
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    image_data = await response.read()
-                    
-                    # Save the image
-                    image_filename = f"{uuid.uuid4()}.png"
-                    image_path = self.image_dir / image_filename
-                    
-                    # Convert and save as PNG
-                    img = Image.open(io.BytesIO(image_data))
-                    img.save(str(image_path), 'PNG')
-                    
-                    logger.info(f"Image generated with Pollinations AI: {image_filename}")
-                    image_url = f"/uploads/generated_images/{image_filename}"
-                    
-                    return {
-                        "success": True,
-                        "image_url": image_url,
-                        "message": f"🎨 Image generated successfully!\n\n**Prompt:** {prompt}",
-                        "is_image": True,
-                        "model": "pollinations-ai",
-                        "original_request": prompt,
-                        "timestamp": datetime.now().isoformat()
-                    }
-                else:
-                    raise Exception(f"Pollinations API returned status {response.status}")
+        # Add text
+        try:
+            font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 36)
+            small_font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 24)
+        except:
+            font = ImageFont.load_default()
+            small_font = ImageFont.load_default()
+        
+        # Center text
+        title = f"Image: {prompt[:40]}"
+        bbox = draw.textbbox((0, 0), title, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        x = (width - text_width) // 2
+        y = (height - text_height) // 2
+        
+        draw.text((x, y), title, fill=(255, 255, 255), font=font)
+        
+        if error:
+            error_text = "Vertex AI temporarily unavailable"
+            bbox2 = draw.textbbox((0, 0), error_text, font=small_font)
+            text_width2 = bbox2[2] - bbox2[0]
+            x2 = (width - text_width2) // 2
+            draw.text((x2, y + 60), error_text, fill=(255, 200, 200), font=small_font)
+        
+        # Save
+        image_filename = f"{uuid.uuid4()}.png"
+        image_path = self.image_dir / image_filename
+        img.save(str(image_path), 'PNG')
+        
+        logger.info(f"✅ Placeholder generated: {image_filename}")
+        image_url = f"/uploads/generated_images/{image_filename}"
+        
+        return {
+            "success": True,
+            "image_url": image_url,
+            "message": f"⚠️ Generated placeholder image (Vertex AI unavailable)\n\n**Your prompt:** {prompt}\n\n**Note:** This is a placeholder. Vertex AI Imagen 3 is temporarily unavailable.",
+            "is_image": True,
+            "model": "placeholder",
+            "original_request": prompt,
+            "timestamp": datetime.now().isoformat()
+        }
     
     def detect_image_request(self, message: str) -> bool:
         """
@@ -197,11 +241,11 @@ class ImageService:
 
 
 # Singleton instance
-_image_service = None
+_service_instance = None
 
 def get_image_service() -> ImageService:
-    """Get or create the image service singleton"""
-    global _image_service
-    if _image_service is None:
-        _image_service = ImageService()
-    return _image_service
+    """Get or create singleton ImageService instance"""
+    global _service_instance
+    if _service_instance is None:
+        _service_instance = ImageService()
+    return _service_instance

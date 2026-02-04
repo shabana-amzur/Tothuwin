@@ -47,9 +47,9 @@ gspread==6.1.4  # Google Sheets API
 oauth2client==4.1.3  # Google OAuth for Sheets
 
 # Image Processing & Vision
-Pillow==11.0.0  # Image processing
+Pillow==11.0.0  # Image processing for placeholders
 pytesseract==0.3.13  # OCR fallback (optional)
-openai==1.59.3  # OpenAI Vision API
+# openai==1.59.3  # OpenAI Vision API (not needed - using Vertex AI)
 
 # Environment & Configuration
 python-dotenv==1.0.1
@@ -91,8 +91,8 @@ mypy==1.14.1
 # Development
 ipython==8.18.1
 
-# Image Generation (async HTTP requests)
-aiohttp==3.9.1
+# Vertex AI Image Generation
+google-cloud-aiplatform==1.74.0  # Vertex AI Imagen 3
 
 # Alternative Embeddings (free, no API key needed)
 sentence-transformers==2.6.0
