@@ -14,6 +14,7 @@ const NL2SQLPage = dynamic(() => import('./sql/page'), { ssr: false });
 const ExcelPage = dynamic(() => import('./excel/page'), { ssr: false });
 const TicTacToePage = dynamic(() => import('./tictactoe/page'), { ssr: false });
 const DocumentQAPage = dynamic(() => import('./components/DocumentQAPage'), { ssr: false });
+const ImageValidationPage = dynamic(() => import('./components/ImageValidationPage'), { ssr: false });
 
 interface Message {
   role: 'user' | 'assistant';
@@ -1308,96 +1309,7 @@ function HomeContent() {
             {activeFeature === 'excel' && <ExcelPage />}
             {activeFeature === 'game' && <TicTacToePage />}
             {activeFeature === 'rag' && <DocumentQAPage />}
-            {activeFeature === 'image' && (
-              <div className="h-full overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                  <div className="bg-[#181818] rounded-lg p-6">
-                    <h2 className="text-2xl font-bold text-white mb-6">🖼️ Image Validation</h2>
-                    
-                    {/* Document type selector */}
-                    <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Document Type:</label>
-                      <select
-                        value={documentType}
-                        onChange={(e) => setDocumentType(e.target.value)}
-                        className="w-full bg-[#0f0f0f] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      >
-                        <option value="invoice">Invoice</option>
-                        <option value="receipt">Receipt</option>
-                        <option value="id_card">ID Card</option>
-                      </select>
-                    </div>
-
-                    {/* Image file input */}
-                    <>
-                      <input
-                        ref={imageInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageSelect}
-                        className="hidden"
-                      />
-
-                      {selectedImage ? (
-                        <div className="mb-6">
-                          <div className="flex items-center justify-between bg-[#0f0f0f] rounded-lg px-4 py-3 mb-4">
-                            <div className="flex items-center space-x-2">
-                              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                              <span className="text-sm text-gray-300">{selectedImage.name}</span>
-                              <span className="text-xs text-gray-500">({(selectedImage.size / 1024).toFixed(1)} KB)</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={removeSelectedImage}
-                              className="text-sm text-gray-400 hover:text-white"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={validateImage}
-                            disabled={isValidatingImage}
-                            style={{ backgroundColor: '#ec6438' }}
-                            className="w-full text-white px-4 py-3 rounded-lg hover:opacity-90 transition-all disabled:opacity-50 font-medium"
-                          >
-                            {isValidatingImage ? 'Validating...' : 'Validate Image'}
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => imageInputRef.current?.click()}
-                          style={{ backgroundColor: '#ec6438' }}
-                          className="w-full text-white px-4 py-3 rounded-lg hover:opacity-90 transition-all font-medium mb-6 shadow-lg"
-                        >
-                          Choose Image File
-                        </button>
-                      )}
-                    </>
-
-                    {/* Information */}
-                    <div className="bg-[#0f0f0f] rounded-lg p-4">
-                      <h3 className="text-sm font-medium text-blue-300 mb-2">ℹ️ How it works:</h3>
-                      <ul className="text-xs text-gray-400 space-y-1">
-                        <li>• Upload an image to validate with AI</li>
-                        <li>• Supports invoices, receipts, and ID cards</li>
-                        <li>• Results will appear in the chat</li>
-                      </ul>
-                      
-                      <h3 className="text-sm font-medium text-blue-300 mb-2 mt-4">📋 Validation Rules:</h3>
-                      <ul className="text-xs text-gray-400 space-y-1">
-                        <li>• <strong>Invoices:</strong> Company name, invoice number, date, total amount, items/services</li>
-                        <li>• <strong>Receipts:</strong> Merchant name, transaction date, total amount, payment method</li>
-                        <li>• <strong>ID Cards:</strong> Name, ID number, date of birth, expiry date, photo quality</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {activeFeature === 'image' && <ImageValidationPage token={token} />}
           </div>
         )}
       </div>
