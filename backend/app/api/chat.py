@@ -133,6 +133,30 @@ async def chat(
                     "message": f"MCP Style Agent encountered an error: {str(e)}\\n\\nPlease try again or select a different model.",
                     "model": "MCP Style Agent (Error)"
                 }
+        elif selected_model == "rag":
+            # Use RAG mode (document-grounded chat)
+            logger.info(f"📚 Using RAG CHAT for user {current_user.email}")
+            chat_service = get_chat_service()
+            
+            # Force RAG mode - always use documents if available
+            from app.services.rag_service import get_rag_service
+            rag_service = get_rag_service()
+            
+            # Check if thread has documents
+            if not rag_service.should_use_rag(current_user.id, thread_id):
+                result = {
+                    "message": "⚠️ **No documents uploaded yet!**\n\nTo use RAG Chat:\n1. Click the 📎 paperclip icon\n2. Upload a PDF, TXT, or DOCX file\n3. Ask questions about your document\n\nExample questions:\n- \"What is the main topic of this document?\"\n- \"Summarize the key points\"\n- \"Find information about [specific topic]\"",
+                    "model": "RAG Chat"
+                }
+            else:
+                result = await chat_service.get_chat_response(
+                    user_message=request.message,
+                    conversation_history=history,
+                    user_id=current_user.id,
+                    thread_id=thread_id,
+                    use_rag=True  # Force RAG mode
+                )
+                result["model"] = "RAG Chat"
         elif selected_model == "agent" or request.use_agent:
             # Use Basic Agent (ReAct pattern with tools)
             logger.info(f"🤖 Using BASIC AGENT for user {current_user.email}")
@@ -142,21 +166,16 @@ async def chat(
                 "model": "Gemini Agent"
             }
         else:
-            # Use regular Gemini model
+            # Use regular Gemini model (no automatic RAG)
             logger.info(f"💬 Using GEMINI for user {current_user.email}")
             chat_service = get_chat_service()
-            
-            # Check if thread has documents and should use RAG
-            from app.services.rag_service import get_rag_service
-            rag_service = get_rag_service()
-            use_rag = rag_service.should_use_rag(current_user.id, thread_id)
             
             result = await chat_service.get_chat_response(
                 user_message=request.message,
                 conversation_history=history,
                 user_id=current_user.id,
                 thread_id=thread_id,
-                use_rag=use_rag
+                use_rag=False  # Gemini mode doesn't use RAG automatically
             )
         
         # Save chat history to database with thread_id
@@ -276,7 +295,26 @@ async def agent_chat(
         # Route to appropriate agent
         selected_model = request.model or "gemini"
         
-        if selected_model == "mcp-style":
+        if selected_model == "rag":
+            # RAG mode for n8n endpoint
+            from app.services.rag_service import get_rag_service
+            rag_service = get_rag_service()
+            
+            if not rag_service.should_use_rag(current_user.id, thread_id):
+                response_text = "No documents uploaded. Please upload documents to use RAG mode."
+                model_used = "RAG Chat"
+            else:
+                chat_service = get_chat_service()
+                result = await chat_service.get_chat_response(
+                    user_message=request.message,
+                    conversation_history=history,
+                    user_id=current_user.id,
+                    thread_id=thread_id,
+                    use_rag=True
+                )
+                response_text = result["message"]
+                model_used = "RAG Chat"
+        elif selected_model == "mcp-style":
             mcp_response = run_mcp_agent(request.message)
             response_text = mcp_response
             model_used = "MCP Style Agent"

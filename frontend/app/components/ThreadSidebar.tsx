@@ -17,7 +17,7 @@ interface ThreadSidebarProps {
   refreshTrigger?: number;
   onNavigate?: (path: string) => void;
   onToggleImageValidation?: () => void;
-  onFeatureSelect?: (feature: 'sql' | 'excel' | 'game') => void;
+  onFeatureSelect?: (feature: 'sql' | 'excel' | 'game' | 'rag') => void;
 }
 
 export default function ThreadSidebar({ onSelectThread, currentThreadId, refreshTrigger, onNavigate, onToggleImageValidation, onFeatureSelect }: ThreadSidebarProps) {
@@ -104,7 +104,7 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
       <div className="sticky top-0 z-10 bg-[#f3f3f3] dark:bg-[#181818] p-4 space-y-2">
         <button
           onClick={handleNewChat}
-          className="w-full bg-[#ec6438] hover:bg-[#d65430] text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+          className="w-full bg-[#10a37f] hover:bg-[#0d8c6f] text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
         >
           <span>✏️</span>
           <span>New Chat</span>
@@ -141,6 +141,14 @@ export default function ThreadSidebar({ onSelectThread, currentThreadId, refresh
         >
           <span>🎮</span>
           <span>Tic-Tac-Toe</span>
+        </button>
+        
+        <button
+          onClick={() => onFeatureSelect?.('rag')}
+          className="w-full bg-[#ec6438]/80 hover:bg-[#ec6438] text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-start gap-2"
+        >
+          <span>📚</span>
+          <span>Document Q&A</span>
         </button>
       </div>
 

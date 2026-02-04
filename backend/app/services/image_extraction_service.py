@@ -1,13 +1,12 @@
 """
-Image data extraction service using OpenAI Vision API.
+Image data extraction service using Google Gemini API with Vision.
 """
 import base64
 import io
 import json
 from typing import Dict, Any, Optional, List
 from PIL import Image
-import openai
-from openai import OpenAI
+import google.generativeai as genai
 import os
 from app.config import get_settings
 
@@ -15,12 +14,15 @@ settings = get_settings()
 
 
 class ImageExtractionService:
-    """Service for extracting structured data from images using OpenAI Vision."""
+    """Service for extracting structured data from images using Gemini API."""
     
     def __init__(self):
-        """Initialize the extraction service with OpenAI client."""
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = "gpt-4o"  # GPT-4 with vision capabilities
+        """Initialize the extraction service with Gemini API."""
+        # Use Gemini API (not Vertex AI) - same as chat service
+        genai.configure(api_key=settings.GOOGLE_GEMINI_API_KEY)
+        
+        # Use gemini-1.0-pro-vision which supports vision
+        self.model = genai.GenerativeModel('gemini-1.0-pro-vision')
     
     def encode_image(self, image_bytes: bytes) -> str:
         """
@@ -45,13 +47,18 @@ class ImageExtractionService:
             Tuple of (is_valid, error_message)
         """
         try:
+            # Ensure we have bytes, not BytesIO
+            if isinstance(image_bytes, io.BytesIO):
+                image_bytes = image_bytes.read()
+            
             # Check file size (max 10MB)
             if len(image_bytes) > 10 * 1024 * 1024:
                 return False, "Image size exceeds 10MB limit"
             
-            # Validate image format
-            image = Image.open(io.BytesIO(image_bytes))
-            if image.format not in ['JPEG', 'PNG', 'JPG']:
+            # Validate image format - support WEBP too
+            bytes_io = io.BytesIO(image_bytes)
+            image = Image.open(bytes_io)
+            if image.format not in ['JPEG', 'PNG', 'JPG', 'WEBP']:
                 return False, f"Unsupported image format: {image.format}"
             
             return True, None
@@ -120,7 +127,7 @@ Example response format:
         expected_fields: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
-        Extract structured data from an image using OpenAI Vision.
+        Extract structured data from an image using Gemini Vision.
         
         Args:
             image_bytes: Raw image bytes
@@ -138,40 +145,19 @@ Example response format:
         if not is_valid:
             raise ValueError(error_msg)
         
-        # Encode image
-        base64_image = self.encode_image(image_bytes)
-        
         # Build prompt
         prompt = self.build_extraction_prompt(document_type, expected_fields)
         
         try:
-            # Call OpenAI Vision API
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": prompt
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{base64_image}",
-                                    "detail": "high"
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens=1000,
-                temperature=0.1,  # Lower temperature for more consistent extraction
-            )
+            # Prepare image for Gemini API
+            from PIL import Image as PILImage
+            image = PILImage.open(io.BytesIO(image_bytes))
+            
+            # Call Gemini API with vision
+            response = self.model.generate_content([prompt, image])
             
             # Extract and parse response
-            content = response.choices[0].message.content
+            content = response.text
             
             # Try to parse JSON from response
             try:
@@ -187,10 +173,8 @@ Example response format:
             except json.JSONDecodeError as e:
                 raise ValueError(f"Failed to parse extracted data as JSON: {str(e)}\nContent: {content}")
         
-        except openai.APIError as e:
-            raise ValueError(f"OpenAI API error: {str(e)}")
         except Exception as e:
-            raise ValueError(f"Extraction failed: {str(e)}")
+            raise ValueError(f"Gemini API Vision error: {str(e)}")
     
     async def extract_with_fallback(
         self,
@@ -240,6 +224,10 @@ Example response format:
         """
         try:
             import pytesseract
+            
+            # Ensure we have bytes, not BytesIO
+            if isinstance(image_bytes, io.BytesIO):
+                image_bytes = image_bytes.read()
             
             # Open image
             image = Image.open(io.BytesIO(image_bytes))

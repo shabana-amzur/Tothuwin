@@ -34,7 +34,9 @@ class NL2SQLService:
         nl2sql_db_url = os.getenv('NL2SQL_DATABASE_URL', settings.DATABASE_URL)
         self.engine = create_engine(nl2sql_db_url, pool_pre_ping=True)
         
-        logger.info(f"NL2SQL Service initialized with database")
+        # Detect database type
+        self.db_type = 'sqlite' if 'sqlite' in nl2sql_db_url.lower() else 'postgresql'
+        logger.info(f"NL2SQL Service initialized with {self.db_type} database")
     
     def get_database_schema(self) -> str:
         """
@@ -100,9 +102,12 @@ class NL2SQLService:
             if schema is None:
                 schema = self.get_database_schema()
             
+            # Determine SQL dialect based on database type
+            sql_dialect = "SQLite" if self.db_type == 'sqlite' else "PostgreSQL"
+            
             # Create prompt for SQL generation
             prompt_template = PromptTemplate(
-                input_variables=["question", "schema"],
+                input_variables=["question", "schema", "dialect"],
                 template="""You are a SQL expert. Convert the following natural language question into a SQL query.
 
 Database Schema:
@@ -112,11 +117,12 @@ IMPORTANT RULES:
 1. Generate SELECT, INSERT, UPDATE, or DELETE queries as appropriate for the question
 2. Return ONLY the SQL query, no explanations or markdown
 3. Do not include semicolons
-4. Use proper SQL syntax for PostgreSQL
+4. Use proper SQL syntax for {dialect}
 5. Use table and column names exactly as shown in the schema
 6. Do NOT generate DROP, ALTER, CREATE, TRUNCATE, or other DDL statements
 7. For write operations (INSERT/UPDATE/DELETE), be precise and use WHERE clauses when appropriate
 8. If the question cannot be answered with the given schema, return: "ERROR: Cannot generate query from this question"
+9. Do NOT use PostgreSQL-specific features like pg_catalog when using SQLite
 
 Question: {question}
 
@@ -124,7 +130,11 @@ SQL Query:"""
             )
             
             # Format prompt
-            formatted_prompt = prompt_template.format(question=question, schema=schema)
+            formatted_prompt = prompt_template.format(
+                question=question, 
+                schema=schema,
+                dialect=sql_dialect
+            )
             
             # Generate SQL using Gemini
             logger.info(f"Generating SQL for question: {question}")

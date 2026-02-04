@@ -35,7 +35,7 @@ class ChatRequest(BaseModel):
     )
     model: Optional[str] = Field(
         default="gemini",
-        description="Model to use: 'gemini', 'agent', 'mcp-style', or 'n8n'"
+        description="Model to use: 'gemini', 'agent', 'mcp-style', 'n8n', or 'rag'"
     )
     
     class Config:
